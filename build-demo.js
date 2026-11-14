@@ -8,7 +8,8 @@ const read = (f) => fs.readFileSync(path.join(__dirname, f), 'utf8');
 const css = read('public/styles.css');
 const favicon = 'data:image/svg+xml;base64,' + Buffer.from(read('public/favicon.svg')).toString('base64');
 const body = read('public/index.html').match(/<body>([\s\S]*?)<script/)[1].replace(/\/favicon\.svg/g, favicon);
-const appJs = read('public/app.js').replace(/\/favicon\.svg/g, favicon);
+const appJs = ['icons.js', 'markdown.js', 'books.js', 'studio.js', 'app.js']
+  .map((f) => read('public/' + f)).join('\n;\n').replace(/\/favicon\.svg/g, favicon);
 
 const adapter = `
 (function () {
@@ -66,17 +67,16 @@ const adapter = `
       store.del(KEY + ':db'); ss.del(KEY + ':user'); api.loadDb(true); sid = null; location.hash = '#/login'; location.reload();
     });
     bar.appendChild(txt); bar.appendChild(btn);
-    document.body.appendChild(bar);
+    document.body.insertBefore(bar, document.body.firstChild);
   });
 })();
 `;
 
 const demoCss = `
-.demo-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; gap: .75rem; align-items: center; justify-content: center; flex-wrap: wrap;
-  padding: .45rem max(16px, env(safe-area-inset-right, 0px)) calc(.45rem + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  background: var(--navy); color: #fff; font-size: .82rem; }
-.container { padding-bottom: 5rem; }
-.toast { bottom: 3.5rem; }
+.demo-bar { display: flex; gap: .75rem; align-items: center; justify-content: center; flex-wrap: wrap;
+  padding: .35rem max(16px, env(safe-area-inset-right, 0px)) .35rem max(16px, env(safe-area-inset-left, 0px));
+  background: var(--gold); color: var(--navy); font-size: .8rem; font-weight: 600; }
+.demo-bar .btn { color: var(--navy); }
 `;
 
 const fragment = `<title>Marstal Navigationsskole Portal</title>
@@ -92,6 +92,7 @@ ${read('seed.js')}
 ${read('api.js')}
 </script>
 <script>
+window.PORTAL_DEMO = true;
 ${adapter}
 </script>
 <script>

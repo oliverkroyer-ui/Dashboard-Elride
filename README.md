@@ -7,6 +7,23 @@ En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal*
 - Færgenavigatør: Navigation · Sikkerhed & beredskab · Sømandskab · El-drift · Kommunikation, service & turisme
 
 ## Funktioner
+**Lærebøger** – lærerne skriver og vedligeholder selv bøgerne
+- Bøger med kapitler skrevet i markdown (overskrifter, lister, tabeller, formler, billeder, links)
+- Editor med værktøjslinje og live forhåndsvisning (Skriv / Forhåndsvis på mobil)
+- Kladde eller udgivet for både bog og kapitel – eleverne ser kun det udgivne
+- Versionshistorik på hvert kapitel: se og gendan tidligere versioner
+- Eleverne markerer kapitler som læst og ser deres fremgang
+
+**Lærerstudio** – lærerens værksted
+- Overblik: lærebøger, kapitler, kladder, ord skrevet, materialer, opgaver og lektioner
+- Hvor mange elever der er færdige med hver bog
+- Redigér fag (navn, kode, farve og beskrivelse)
+- Ændringslog over alt, der er oprettet og redigeret
+
+**Som app**
+- Bundmenu med ikoner på mobil og en tilpasset topmenu på computer
+- Kan installeres på telefonen ("Føj til hjemmeskærm"), når portalen køres fra serveren
+
 **Elever**
 - Forside med dagens skema, kommende afleveringer, seneste opslag og ulæste beskeder
 - Ugeskema
@@ -19,7 +36,7 @@ En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal*
 - Forside med dagens lektioner og afleveringer der venter på bedømmelse
 - Ugeskema – lektioner tilføjes/fjernes under fanen *Skema* i hvert fag
 - Beskeder med elever i egne fag
-- Opret opslag, materialer (med links) og opgaver med frist i egne fag
+- Opret, **redigér** og slet opslag, materialer, opgaver og lektioner i egne fag
 - Bedøm afleveringer med karakter + feedback
 - Elevliste og karakterbog pr. fag
 
@@ -51,8 +68,8 @@ Port kan ændres: `PORT=8080 npm start`.
 - `api.js` – portalens logik: ruter, adgangskontrol (elever/lærere ser kun deres egne fag), sessioner
 - `server.js` – Node.js HTTP-server omkring `api.js` med JSON-fil som database
 - `build-demo.js` – samler portalen i én HTML-fil, der kører uden server
+- `public/` – `app.js` (kerne og sider), `books.js` (lærebøger), `studio.js` (Lærerstudio), `markdown.js`, `icons.js` (Lucide-ikoner, ISC-licens), `sw.js` + `manifest.webmanifest` (installérbar app)
 - `seed.js` – fag, brugere og demoindhold
-- `public/` – frontend (HTML/CSS/JS uden frameworks)
 - Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
 
 Fag, brugere og hold ændres i `seed.js` efterfulgt af `npm run reset`.

@@ -76,24 +76,36 @@ function submitForm(form, fn, okMsg) {
 // ---------- Topbar ----------
 function updateChrome() {
   const bar = document.getElementById('topbar');
-  if (!state.user) { bar.hidden = true; return; }
-  bar.hidden = false;
+  const tabbar = document.getElementById('tabbar');
+  document.body.classList.toggle('signed-in', !!state.user);
+  if (!state.user) { bar.hidden = true; tabbar.hidden = true; return; }
+  bar.hidden = false; tabbar.hidden = false;
   document.getElementById('userName').textContent = state.user.name;
   document.getElementById('roleBadge').textContent = isTeacher() ? 'Lærer' : 'Elev';
-  const nav = document.getElementById('topnav');
+  document.getElementById('avatar').textContent = state.user.name.split(' ').map((p) => p[0]).join('').slice(0, 2);
   const current = location.hash || '#/';
-  const links = [['#/', 'Forside'], ['#/skema', 'Skema'], ['#/fag', 'Mine fag'], ['#/beskeder', 'Beskeder']];
-  if (!isTeacher()) links.push(['#/karakterer', 'Karakterer']);
-  const badge = h('span.badge', { hidden: !state.unread }, String(state.unread || ''));
-  nav.replaceChildren(...links.map(([href, label]) =>
-    h('a', { href, class: (current === href || (href !== '#/' && current.startsWith(href))) ? 'active' : '' }, label, href === '#/beskeder' ? badge : null)));
-  refreshUnread(badge);
+  // [href, label, ikon, vises i bundmenu på mobil]
+  const links = [['#/', 'Forside', 'home', true], ['#/skema', 'Skema', 'calendar', true], ['#/fag', 'Fag', 'layers', false],
+    ['#/boeger', 'Lærebøger', 'library', true], ['#/beskeder', 'Beskeder', 'chat', true]];
+  links.push(isTeacher() ? ['#/studio', 'Studio', 'code', true] : ['#/karakterer', 'Karakterer', 'award', true]);
+  const sections = { '#/fag': ['#/fag', '#/opgave'], '#/boeger': ['#/boeger', '#/bog/', '#/rediger-'], '#/studio': ['#/studio'] };
+  const isActive = (href) => current === href || (href !== '#/' && (sections[href] || [href]).some((p) => current.startsWith(p)));
+  const badges = [];
+  const make = (cls, withIcon) => links.filter((l) => cls !== 'tab' || l[3]).map(([href, label, ic]) => {
+    const badge = href === '#/beskeder' ? h('span.badge', { hidden: !state.unread }, String(state.unread || '')) : null;
+    if (badge) badges.push(badge);
+    return h('a', { href, class: isActive(href) ? 'active' : '', 'aria-current': isActive(href) ? 'page' : null },
+      withIcon ? icon(ic, cls === 'tab' ? 22 : 18) : null, h('span', label), badge);
+  });
+  document.getElementById('topnav').replaceChildren(...make('top', true));
+  document.getElementById('tabbar').replaceChildren(...make('tab', true));
+  refreshUnread(badges);
 }
-async function refreshUnread(badge) {
+async function refreshUnread(badges) {
   try {
     const { threads } = await api('GET', '/api/messages');
     state.unread = threads.reduce((n, t) => n + t.unread, 0);
-    badge.textContent = String(state.unread); badge.hidden = !state.unread;
+    badges.forEach((b) => { b.textContent = String(state.unread); b.hidden = !state.unread; });
   } catch { /* ignore */ }
 }
 document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -113,7 +125,7 @@ function viewLogin() {
       role = r; roleBtns.forEach((b) => b.classList.remove('active')); e.currentTarget.classList.add('active');
       userInput.placeholder = r === 'teacher' ? 'f.eks. lars' : 'f.eks. anna';
     },
-  }, r === 'teacher' ? '🧭 Lærerportal' : '🎓 Elevportal'));
+  }, icon(r === 'teacher' ? 'compass' : 'book', 18), r === 'teacher' ? 'Lærerportal' : 'Elevportal'));
 
   const form = h('form.form',
     h('div.role-switch', roleBtns),
@@ -167,7 +179,15 @@ function announcementList(items, showSubject) {
 
 async function viewDashboard() {
   loading();
-  const d = await api('GET', '/api/dashboard');
+  const [d, { books }] = await Promise.all([api('GET', '/api/dashboard'), api('GET', '/api/books')]);
+  const reading = books.filter((b) => b.chapterCount && b.readCount < b.chapterCount).slice(0, 3);
+  const booksCard = isTeacher()
+    ? h('a.card.studio-card', { href: '#/studio' }, icon('code', 22),
+      h('div', h('strong', 'Lærerstudio'), h('div.small.muted', `${books.length} lærebøger · ${books.reduce((n, b) => n + (b.draftChapters || 0), 0)} kapitler i kladde – skriv og opdatér dit indhold`)))
+    : h('div.card', h('div.row', h('h2', 'Fortsæt læsning'), h('a.small', { href: '#/boeger' }, 'Alle bøger →')),
+      reading.length ? h('ul.list', reading.map((b) => h('li', h('a.reading-item', { href: `#/bog/${b.id}` },
+        h('div.row', h('strong', b.title), h('span.small.muted', `${b.readCount}/${b.chapterCount}`)),
+        progressBar(b.readCount, b.chapterCount))))) : h('p.empty', books.length ? 'Du har læst alle kapitler 🎉' : 'Ingen lærebøger endnu.'));
   const hello = h('div.hero',
     h('h1', `Velkommen, ${state.user.name.split(' ')[0]}`),
     h('p', isTeacher() ? 'Lærerportal – overblik over dine fag, afleveringer og opslag.' : `Elevportal · ${state.user.className || ''}`));
@@ -193,7 +213,7 @@ async function viewDashboard() {
   }
 
   render(hello,
-    h('div.grid.two', h('div.stack', todayCard, left), h('div.card', h('h2', 'Seneste opslag'), announcementList(d.announcements, true))),
+    h('div.grid.two', h('div.stack', todayCard, left), h('div.stack', booksCard, h('div.card', h('h2', 'Seneste opslag'), announcementList(d.announcements, true)))),
     h('div.section-title', h('h2', 'Mine fag')),
     h('div.grid.subjects', d.subjects.map(subjectCard)));
 }
@@ -209,7 +229,7 @@ async function viewSubject(id, tab = 'opslag') {
   loading();
   const s = await api('GET', `/api/subjects/${id}`);
   const reload = (t) => viewSubject(id, t);
-  const tabs = [['opslag', 'Opslag'], ['materialer', 'Materialer'], ['opgaver', 'Opgaver'], ['skema', 'Skema']];
+  const tabs = [['opslag', 'Opslag'], ['boeger', 'Lærebøger'], ['materialer', 'Materialer'], ['opgaver', 'Opgaver'], ['skema', 'Skema']];
   if (isTeacher()) tabs.push(['elever', 'Elever'], ['karakterbog', 'Karakterbog']);
   if (!tabs.some(([k]) => k === tab)) tab = 'opslag';
 
@@ -225,10 +245,22 @@ async function viewSubject(id, tab = 'opslag') {
         h('label', 'Titel', h('input', { name: 'title', required: true })),
         h('label', 'Tekst', h('textarea', { name: 'body', required: true })),
       ], (data) => api('POST', `/api/subjects/${id}/announcements`, data).then(() => reload('opslag')), 'Opslaget er offentliggjort'),
-      h('div.card', s.announcements.length ? h('ul.list', s.announcements.map((n) => h('li',
-        h('div.row', h('strong', n.title), h('span.muted.small', fmtDate(n.createdAt))),
-        h('div.small.muted', n.author), h('p.prewrap', n.body),
-        isTeacher() && deleteBtn(`/api/announcements/${n.id}`, () => reload('opslag'))))) : h('p.empty', 'Ingen opslag endnu.')),
+      s.announcements.length ? s.announcements.map((n) => {
+        const card = h('div.card',
+          h('div.row', h('strong', n.title), h('span.muted.small', fmtDate(n.createdAt))),
+          h('div.small.muted', n.author, n.updatedAt ? ` · redigeret ${fmtDate(n.updatedAt)}` : ''), h('p.prewrap', n.body),
+          isTeacher() && h('div.actions',
+            editBtn(() => card, () => [
+              h('label', 'Titel', h('input', { name: 'title', required: true, value: n.title })),
+              h('label', 'Tekst', h('textarea', { name: 'body', required: true, value: n.body })),
+            ], (data) => api('PUT', `/api/announcements/${n.id}`, data).then(() => reload('opslag')), 'Opslaget er opdateret'),
+            deleteBtn(`/api/announcements/${n.id}`, () => reload('opslag'))));
+        return card;
+      }) : h('div.card', h('p.empty', 'Ingen opslag endnu.')),
+    ],
+    boeger: () => [
+      isTeacher() && newBookForm([s], s.id),
+      s.books.length ? h('div.grid.books', s.books.map(bookCover)) : h('div.card', h('p.empty', isTeacher() ? 'Faget har ingen lærebøger endnu.' : 'Der er ikke udgivet lærebøger i faget endnu.')),
     ],
     materialer: () => [
       isTeacher() && creator('Upload nyt materiale', [
@@ -236,10 +268,19 @@ async function viewSubject(id, tab = 'opslag') {
         h('label', 'Indhold / noter', h('textarea', { name: 'content' })),
         h('label', 'Link (valgfrit)', h('input', { name: 'link', type: 'url', placeholder: 'https://…' })),
       ], (data) => api('POST', `/api/subjects/${id}/materials`, data).then(() => reload('materialer')), 'Materialet er tilføjet'),
-      s.materials.length ? s.materials.map((m) => h('div.card',
-        h('div.row', h('h3', '📘 ', m.title), h('span.muted.small', fmtDate(m.createdAt))),
-        m.content && h('p.prewrap', m.content),
-        h('div.actions', linkify(m.link), isTeacher() && deleteBtn(`/api/materials/${m.id}`, () => reload('materialer'))))) : h('div.card', h('p.empty', 'Ingen materialer endnu.')),
+      s.materials.length ? s.materials.map((m) => {
+        const card = h('div.card',
+          h('div.row', h('h3', m.title), h('span.muted.small', fmtDate(m.updatedAt || m.createdAt))),
+          m.content && h('p.prewrap', m.content),
+          h('div.actions', linkify(m.link), isTeacher() && [
+            editBtn(() => card, () => [
+              h('label', 'Titel', h('input', { name: 'title', required: true, value: m.title })),
+              h('label', 'Indhold / noter', h('textarea', { name: 'content', value: m.content || '' })),
+              h('label', 'Link (valgfrit)', h('input', { name: 'link', type: 'url', value: m.link || '', placeholder: 'https://…' })),
+            ], (data) => api('PUT', `/api/materials/${m.id}`, data).then(() => reload('materialer')), 'Materialet er opdateret'),
+            deleteBtn(`/api/materials/${m.id}`, () => reload('materialer'))]));
+        return card;
+      }) : h('div.card', h('p.empty', 'Ingen materialer endnu.')),
     ],
     opgaver: () => [
       isTeacher() && creator('Opret ny opgave', [
@@ -258,17 +299,43 @@ async function viewSubject(id, tab = 'opslag') {
 
   body.append(...[views[tab]()].flat(Infinity).filter(Boolean));
   body.classList.add('stack');
+  const editSlot = h('div');
   render(
     h('div.hero.subject-hero', { accent: s.color },
-      h('div.small', h('a', { href: '#/fag', class: 'backlink' }, '← Mine fag')),
+      h('div.row', h('a.hero-back.small', { href: '#/fag' }, '← Alle fag'),
+        isTeacher() ? h('button.btn.small.on-dark', {
+          type: 'button',
+          onclick: () => {
+            if (editSlot.firstChild) { editSlot.replaceChildren(); return; }
+            const card = subjectEditCard({ ...s, studentCount: s.students.length }, () => reload(tab));
+            editSlot.replaceChildren(card);
+            card.querySelector('button').click();
+          },
+        }, icon('pencil', 16), 'Redigér fag') : null),
       h('h1', `${s.code} · ${s.name}`), h('p', s.description), h('p.small', 'Underviser: ', s.teachers.join(', '))),
-    tabBar, body);
-  document.querySelectorAll('.backlink').forEach((a) => a.style.setProperty('color', '#fff'));
+    editSlot, tabBar, body);
 }
 
 function creator(title, fields, onSubmit, okMsg) {
   const form = submitForm(h('form.form', fields, h('div.actions', h('button.btn', { type: 'submit' }, 'Gem'))), onSubmit, okMsg);
   return h('details.card.creator', h('summary', '＋ ', title), form);
+}
+
+// Redigér: byt et kort ud med en formular og tilbage igen.
+const toLocalInput = (iso) => { const d = new Date(iso); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+function editBtn(getCard, fields, onSave, okMsg) {
+  return h('button.btn.small.ghost', {
+    type: 'button',
+    onclick: () => {
+      const card = getCard();
+      const form = submitForm(h('form.card.form.edit-form', h('div.small.muted', 'Redigerer'), fields(),
+        h('div.actions', h('button.btn', { type: 'submit' }, 'Gem ændringer'),
+          h('button.btn.ghost', { type: 'button', onclick: () => form.replaceWith(card) }, 'Annullér'))),
+      onSave, okMsg);
+      card.replaceWith(form);
+      const first = form.querySelector('input, textarea'); if (first) first.focus();
+    },
+  }, icon('pencil', 16), 'Redigér');
 }
 
 // Slet med bekræftelse i selve knappen (første klik spørger, andet klik sletter).
@@ -290,15 +357,21 @@ function deleteBtn(url, after) {
 }
 
 function assignmentCard(a, reload) {
-  const head = h('div.row', h('h3', '📝 ', a.title), dueInfo(a.due));
+  const head = h('div.row', h('h3', a.title), dueInfo(a.due));
   const desc = h('p.prewrap', a.description);
   if (isTeacher()) {
-    return h('div.card', head, desc,
+    const card = h('div.card', head, desc,
       h('div.actions',
         h('span.pill', `${a.submissionCount}/${a.studentCount} afleveret`),
         a.ungraded ? h('span.pill.warn', `${a.ungraded} til bedømmelse`) : null,
         h('a.btn.small', { href: `#/opgave/${a.id}` }, 'Se afleveringer'),
+        editBtn(() => card, () => [
+          h('label', 'Titel', h('input', { name: 'title', required: true, value: a.title })),
+          h('label', 'Beskrivelse', h('textarea', { name: 'description', required: true, value: a.description })),
+          h('label', 'Afleveringsfrist', h('input', { name: 'due', type: 'datetime-local', required: true, value: toLocalInput(a.due) })),
+        ], (data) => api('PUT', `/api/assignments/${a.id}`, { ...data, due: new Date(data.due).toISOString() }).then(reload), 'Opgaven er opdateret'),
         deleteBtn(`/api/assignments/${a.id}`, reload)));
+    return card;
   }
   const sub = a.mySubmission;
   if (sub && sub.grade != null) {
@@ -398,23 +471,32 @@ async function viewSchedule() {
     isTeacher() ? h('p.small.muted', 'Tilføj eller fjern lektioner under fanen “Skema” i det enkelte fag.') : null);
 }
 
+function lessonFields(l) {
+  return [
+    h('div.grid.three',
+      h('label', 'Ugedag', h('select', { name: 'weekday', required: true }, WEEKDAYS.slice(0, 5).map((d, i) => h('option', { value: i + 1, selected: l.weekday === i + 1 }, d)))),
+      h('label', 'Fra', h('input', { name: 'start', type: 'time', required: true, value: l.start })),
+      h('label', 'Til', h('input', { name: 'end', type: 'time', required: true, value: l.end }))),
+    h('label', 'Lokale', h('input', { name: 'room', value: l.room || '', placeholder: 'f.eks. Simulatorbygningen' })),
+  ];
+}
+
 function subjectSchedule(id, reload) {
   const wrap = h('div.stack', h('div.card', h('p.muted', 'Indlæser skema …')));
   (async () => {
     const { lessons } = await api('GET', '/api/schedule');
     const mine = lessons.filter((l) => l.subjectId === id);
     const list = h('div.card', h('h2', 'Ugentlige lektioner'),
-      mine.length ? h('ul.list', mine.map((l) => h('li', h('div.row',
-        h('div', h('strong', `${WEEKDAYS[l.weekday - 1]} ${l.start}–${l.end}`), h('div.small.muted', [l.room, l.teacher].filter(Boolean).join(' · '))),
-        isTeacher() ? deleteBtn(`/api/lessons/${l.id}`, reload) : null)))) : h('p.empty', 'Ingen lektioner i skemaet.'));
+      mine.length ? h('ul.list', mine.map((l) => {
+        const row = h('div.row',
+          h('div', h('strong', `${WEEKDAYS[l.weekday - 1]} ${l.start}–${l.end}`), h('div.small.muted', [l.room, l.teacher].filter(Boolean).join(' · '))),
+          isTeacher() ? h('div.actions', editBtn(() => row, () => lessonFields(l),
+            (data) => api('PUT', `/api/lessons/${l.id}`, data).then(reload), 'Lektionen er opdateret'),
+          deleteBtn(`/api/lessons/${l.id}`, reload)) : null);
+        return h('li', row);
+      })) : h('p.empty', 'Ingen lektioner i skemaet.'));
     wrap.replaceChildren(...[
-      isTeacher() && creator('Tilføj lektion', [
-        h('div.grid.three',
-          h('label', 'Ugedag', h('select', { name: 'weekday', required: true }, WEEKDAYS.slice(0, 5).map((d, i) => h('option', { value: i + 1 }, d)))),
-          h('label', 'Fra', h('input', { name: 'start', type: 'time', required: true, value: '08:15' })),
-          h('label', 'Til', h('input', { name: 'end', type: 'time', required: true, value: '09:45' }))),
-        h('label', 'Lokale', h('input', { name: 'room', placeholder: 'f.eks. Simulatorbygningen' })),
-      ], (data) => api('POST', `/api/subjects/${id}/lessons`, data).then(reload), 'Lektionen er tilføjet'),
+      isTeacher() && creator('Tilføj lektion', lessonFields({ weekday: 1, start: '08:15', end: '09:45', room: '' }), (data) => api('POST', `/api/subjects/${id}/lessons`, data).then(reload), 'Lektionen er tilføjet'),
       list].filter(Boolean));
   })().catch((e) => wrap.replaceChildren(h('p.error', e.message)));
   return wrap;
@@ -470,6 +552,11 @@ async function router() {
     else if (parts[0] === 'karakterer' && !isTeacher()) await viewGrades();
     else if (parts[0] === 'skema') await viewSchedule();
     else if (parts[0] === 'beskeder') await viewMessages(parts[1]);
+    else if (parts[0] === 'boeger') await viewLibrary();
+    else if (parts[0] === 'bog' && parts[1]) await viewBook(parts[1], parts[2]);
+    else if (parts[0] === 'rediger-bog' && parts[1] && isTeacher()) await viewBookEditor(parts[1]);
+    else if (parts[0] === 'rediger-kapitel' && parts[1] && isTeacher()) await viewChapterEditor(parts[1]);
+    else if (parts[0] === 'studio' && isTeacher()) await viewStudio();
     else render(h('div.card', h('h1', 'Siden findes ikke'), h('a', { href: '#/' }, 'Til forsiden')));
   } catch (e) {
     render(h('div.card', h('h2', 'Der opstod en fejl'), h('p.error', e.message), h('a', { href: '#/' }, 'Til forsiden')));
@@ -483,3 +570,8 @@ async function boot(target) {
 }
 window.addEventListener('hashchange', router);
 boot();
+
+// Installérbar app (PWA) – kun når portalen kører fra serveren, ikke i demo-filen.
+if (!window.PORTAL_DEMO && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

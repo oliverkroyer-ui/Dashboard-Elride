@@ -2,26 +2,37 @@
 <html lang="da">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2e4f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Marnav Portal">
   <title>Marstal Navigationsskole – Portal</title>
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/favicon.svg">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="topbar" id="topbar" hidden>
     <a class="brand" href="#/">
-      <img src="/favicon.svg" alt="" width="28" height="28">
-      <span>Marstal Navigationsskole</span>
+      <img src="/favicon.svg" alt="" width="30" height="30">
+      <span class="brand-text">Marstal Navigationsskole</span>
     </a>
-    <nav class="topnav" id="topnav"></nav>
+    <nav class="topnav" id="topnav" aria-label="Hovedmenu"></nav>
     <div class="userbox">
       <span class="role-badge" id="roleBadge"></span>
-      <span id="userName"></span>
+      <span class="avatar" id="avatar" aria-hidden="true"></span>
+      <span class="user-name" id="userName"></span>
       <button class="btn ghost small" id="logoutBtn" type="button">Log ud</button>
     </div>
   </header>
   <main id="app" class="container" aria-live="polite"></main>
+  <nav class="tabbar" id="tabbar" aria-label="Menu" hidden></nav>
   <div id="toast" class="toast" role="status" hidden></div>
+  <script src="/icons.js"></script>
+  <script src="/markdown.js"></script>
+  <script src="/books.js"></script>
+  <script src="/studio.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
