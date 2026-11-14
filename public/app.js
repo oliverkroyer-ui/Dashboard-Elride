@@ -256,7 +256,7 @@ async function viewSubject(id, tab = 'opslag') {
     skema: () => subjectSchedule(id, () => reload('skema')),
   };
 
-  body.append(...[views[tab]()].flat().filter(Boolean));
+  body.append(...[views[tab]()].flat(Infinity).filter(Boolean));
   body.classList.add('stack');
   render(
     h('div.hero.subject-hero', { accent: s.color },
@@ -271,14 +271,22 @@ function creator(title, fields, onSubmit, okMsg) {
   return h('details.card.creator', h('summary', '＋ ', title), form);
 }
 
+// Slet med bekræftelse i selve knappen (første klik spørger, andet klik sletter).
 function deleteBtn(url, after) {
-  return h('button.btn.danger.small', {
+  let armed = false, timer;
+  const btn = h('button.btn.danger.small', {
     type: 'button',
     onclick: async () => {
-      if (!confirm('Er du sikker på, at du vil slette dette?')) return;
+      if (!armed) {
+        armed = true; btn.textContent = 'Klik igen for at slette';
+        timer = setTimeout(() => { armed = false; btn.textContent = 'Slet'; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
       try { await api('DELETE', url); toast('Slettet'); after(); } catch (e) { toast(e.message, true); }
     },
   }, 'Slet');
+  return btn;
 }
 
 function assignmentCard(a, reload) {

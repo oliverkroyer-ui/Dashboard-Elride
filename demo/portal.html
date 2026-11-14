@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Marstal Navigationsskole Portal</title>
+<style>
+:root {
+  --navy: #0b2e4f;
+  --navy-2: #134a7a;
+  --gold: #f2c14e;
+  --bg: #f3f5f8;
+  --card: #ffffff;
+  --text: #1b2430;
+  --muted: #5d6b7c;
+  --line: #dde3ea;
+  --ok: #2a7f62;
+  --warn: #b7791f;
+  --bad: #b23a48;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(11, 46, 79, .06), 0 4px 14px rgba(11, 46, 79, .06);
+  --accent: var(--navy-2);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg); color: var(--text);
+}
+a { color: var(--navy-2); }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 .5rem; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+p { margin: 0 0 .75rem; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  background: var(--navy); color: #fff; padding: .6rem 1.25rem;
+}
+.brand { display: flex; align-items: center; gap: .6rem; color: #fff; text-decoration: none; font-weight: 700; }
+.topnav { display: flex; gap: .25rem; flex: 1; flex-wrap: wrap; }
+.topnav a { color: #d6e2ee; text-decoration: none; padding: .35rem .7rem; border-radius: 6px; }
+.topnav a:hover, .topnav a.active { background: rgba(255,255,255,.12); color: #fff; }
+.userbox { display: flex; align-items: center; gap: .6rem; font-size: .9rem; }
+.role-badge { background: var(--gold); color: var(--navy); font-weight: 700; font-size: .75rem; padding: .15rem .5rem; border-radius: 99px; text-transform: uppercase; letter-spacing: .03em; }
+
+.container { max-width: 1150px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+
+/* Cards & grids */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.1rem 1.2rem; }
+.grid { display: grid; gap: 1rem; }
+.grid.subjects { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.grid.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 800px) { .grid.two { grid-template-columns: 1fr; } }
+.stack > * + * { margin-top: .75rem; }
+
+.subject-card { display: block; text-decoration: none; color: inherit; border-top: 5px solid var(--accent); transition: transform .1s ease, box-shadow .1s ease; }
+.subject-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(11,46,79,.12); }
+.subject-card .code { font-weight: 800; font-size: .75rem; letter-spacing: .08em; color: var(--accent); }
+.subject-card h3 { margin-top: .2rem; }
+.subject-card .meta { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+
+.pill { display: inline-block; font-size: .78rem; padding: .12rem .55rem; border-radius: 99px; background: #eef2f6; color: var(--muted); }
+.pill.warn { background: #fdf3e1; color: var(--warn); }
+.pill.ok { background: #e3f3ec; color: var(--ok); }
+.pill.bad { background: #f9e5e8; color: var(--bad); }
+
+.hero {
+  background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%); color: #fff;
+  border-radius: var(--radius); padding: 1.4rem 1.5rem; margin-bottom: 1.25rem;
+}
+.hero p { color: #d6e2ee; margin: 0; }
+.subject-hero { background: var(--accent); }
+
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.5rem 0 .75rem; }
+.section-title h2 { margin: 0; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.list li:last-child { border-bottom: 0; }
+.row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.empty { color: var(--muted); font-style: italic; }
+
+/* Tabs */
+.tabs { display: flex; gap: .25rem; border-bottom: 2px solid var(--line); margin-bottom: 1rem; flex-wrap: wrap; }
+.tabs button { background: none; border: 0; padding: .6rem 1rem; font: inherit; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* Forms */
+form.form { display: grid; gap: .7rem; }
+label { display: grid; gap: .25rem; font-weight: 600; font-size: .88rem; }
+input, textarea, select {
+  font: inherit; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--text); width: 100%;
+}
+textarea { min-height: 110px; resize: vertical; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--navy-2); outline-offset: 1px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  font: inherit; font-weight: 600; padding: .5rem 1rem; border-radius: 7px; border: 1px solid transparent;
+  background: var(--navy-2); color: #fff; cursor: pointer; text-decoration: none;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; border-color: currentColor; color: inherit; }
+.btn.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+.btn.small { padding: .25rem .6rem; font-size: .82rem; }
+.btn[disabled] { opacity: .5; cursor: default; }
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+details.creator > summary { cursor: pointer; font-weight: 600; color: var(--navy-2); list-style: none; }
+details.creator > summary::-webkit-details-marker { display: none; }
+details.creator[open] > summary { margin-bottom: .75rem; }
+
+/* Login */
+.login-wrap { min-height: 90vh; display: grid; place-items: center; }
+.login-card { width: min(430px, 100%); }
+.login-card .logo { display: flex; align-items: center; gap: .7rem; margin-bottom: 1rem; }
+.login-card .logo h1 { font-size: 1.25rem; margin: 0; }
+.role-switch { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+.role-switch button { padding: .6rem; border: 1px solid var(--line); background: #fff; border-radius: 7px; font: inherit; cursor: pointer; }
+.role-switch button.active { border-color: var(--navy-2); background: #eaf1f8; font-weight: 700; }
+.demo { margin-top: 1rem; font-size: .82rem; color: var(--muted); background: #f6f8fa; padding: .6rem .8rem; border-radius: 7px; }
+.error { color: var(--bad); font-size: .9rem; min-height: 1.2em; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: #f6f8fa; font-weight: 600; white-space: nowrap; }
+td.grade { font-weight: 700; text-align: center; }
+
+.submission-text { white-space: pre-wrap; background: #f6f8fa; border-radius: 7px; padding: .6rem .8rem; margin: .5rem 0; }
+.grade-big { font-size: 1.6rem; font-weight: 800; color: var(--navy); }
+.prewrap { white-space: pre-wrap; }
+
+.toast {
+  position: fixed; right: 1rem; bottom: 1rem; background: var(--navy); color: #fff;
+  padding: .7rem 1rem; border-radius: 8px; box-shadow: var(--shadow); max-width: 360px;
+}
+.toast.error { background: var(--bad); }
+
+[hidden] { display: none !important; }
+label { align-content: start; }
+.card > h2:not(:first-child) { margin-top: 1.25rem; }
+.center { text-align: center; }
+.bullets { margin: 0; padding-left: 1.2rem; }
+.bullets li { margin: .2rem 0; }
+.spaced { margin-top: 1.5rem; }
+
+.badge { display: inline-block; min-width: 1.3em; margin-left: .35rem; padding: 0 .4rem; border-radius: 99px; background: var(--gold); color: var(--navy); font-size: .75rem; font-weight: 800; text-align: center; }
+.grid.three { display: grid; gap: .7rem; grid-template-columns: repeat(3, 1fr); }
+.lesson { border-left: 4px solid var(--accent); padding-left: .7rem !important; margin: .4rem 0; border-bottom: 0 !important; }
+.week { display: grid; gap: .8rem; grid-template-columns: repeat(5, 1fr); }
+.week .day.today { outline: 2px solid var(--gold); }
+.week .day h3 { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 900px) { .week { grid-template-columns: 1fr; } .grid.three { grid-template-columns: 1fr; } }
+.msg-layout { display: grid; gap: 1rem; grid-template-columns: 300px 1fr; align-items: start; }
+@media (max-width: 800px) { .msg-layout { grid-template-columns: 1fr; } }
+.threads li { padding: 0; }
+.threads li.selected { background: #eaf1f8; border-radius: 7px; }
+.thread { display: block; padding: .6rem .5rem; color: inherit; text-decoration: none; }
+.convo { display: grid; gap: .8rem; }
+.messages { display: flex; flex-direction: column; gap: .5rem; max-height: 55vh; overflow-y: auto; padding: .5rem; background: #f6f8fa; border-radius: 8px; }
+.msg { max-width: 75%; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .5rem .75rem; align-self: flex-start; }
+.msg.mine { align-self: flex-end; background: var(--navy-2); color: #fff; border-color: var(--navy-2); }
+.msg .meta { opacity: .7; margin-top: .2rem; }
+.compose textarea { min-height: 70px; }
+
+
+.demo-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; gap: .75rem; align-items: center; justify-content: center; flex-wrap: wrap;
+  padding: .45rem max(16px, env(safe-area-inset-right, 0px)) calc(.45rem + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: var(--navy); color: #fff; font-size: .82rem; }
+.container { padding-bottom: 5rem; }
+.toast { bottom: 3.5rem; }
+
+</style>
+
+  <header class="topbar" id="topbar" hidden>
+    <a class="brand" href="#/">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzAiIGZpbGw9IiMwYjJlNGYiLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNmMmMxNGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxjaXJjbGUgY3g9IjMyIiBjeT0iMTUiIHI9IjUiLz4KICAgIDxsaW5lIHgxPSIzMiIgeTE9IjIwIiB4Mj0iMzIiIHkyPSI1MiIvPgogICAgPGxpbmUgeDE9IjIyIiB5MT0iMjgiIHgyPSI0MiIgeTI9IjI4Ii8+CiAgICA8cGF0aCBkPSJNMTQgMzhjMiA5IDkgMTQgMTggMTRzMTYtNSAxOC0xNCIvPgogIDwvZz4KPC9zdmc+Cg==" alt="" width="28" height="28">
+      <span>Marstal Navigationsskole</span>
+    </a>
+    <nav class="topnav" id="topnav"></nav>
+    <div class="userbox">
+      <span class="role-badge" id="roleBadge"></span>
+      <span id="userName"></span>
+      <button class="btn ghost small" id="logoutBtn" type="button">Log ud</button>
+    </div>
+  </header>
+  <main id="app" class="container" aria-live="polite"></main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  
+<script>
+// Startdata for portalen. Køres automatisk første gang serveren starter,
+// eller med `npm run reset` for at nulstille databasen.
+(function (root) {
+'use strict';
+
+function seed(hashPassword) {
+  const now = Date.now();
+  const days = (n) => new Date(now + n * 86400000).toISOString();
+
+  const users = [
+    { id: 'u1', username: 'lars', name: 'Lars Holm', role: 'teacher', password: hashPassword('laerer123') },
+    { id: 'u2', username: 'mette', name: 'Mette Bruun', role: 'teacher', password: hashPassword('laerer123') },
+    { id: 'u6', username: 'peter', name: 'Peter Krogh', role: 'teacher', password: hashPassword('laerer123') },
+    { id: 'u3', username: 'anna', name: 'Anna Jensen', role: 'student', className: 'Skibsfører · 2. semester (aug. 2026)', password: hashPassword('elev123') },
+    { id: 'u4', username: 'jonas', name: 'Jonas Madsen', role: 'student', className: 'Kystskipper · hold aug. 2026', password: hashPassword('elev123') },
+    { id: 'u5', username: 'freja', name: 'Freja Nielsen', role: 'student', className: 'Færgenavigatør · hold 2026-27', password: hashPassword('elev123') },
+  ];
+  const allStudents = ['u3', 'u4', 'u5'];
+  const navigators = ['u3', 'u4']; // Skibsfører + Kystskipper
+  const ferry = ['u5'];            // Færgenavigatør
+
+  const subjects = [
+    {
+      id: 's-nav', code: 'NAV', name: 'Navigation', color: '#1f5f9e',
+      description: 'Terrestrisk og elektronisk navigation, søkort, kurser, tidevand, ECDIS og radar/ARPA.',
+      teacherIds: ['u1'], studentIds: allStudents,
+    },
+    {
+      id: 's-tek', code: 'TEK', name: 'Skibsteknik', color: '#a2552a',
+      description: 'Skibets konstruktion, maskineri, hjælpesystemer, materialer og vedligehold.',
+      teacherIds: ['u2'], studentIds: navigators,
+    },
+    {
+      id: 's-ret', code: 'RET', name: 'Søret', color: '#5b3f8c',
+      description: 'Sølov, søvejsregler (COLREG), internationale konventioner (SOLAS, MARPOL, STCW) og ansvar til søs.',
+      teacherIds: ['u1'], studentIds: navigators,
+    },
+    {
+      id: 's-stab', code: 'STAB', name: 'Stabilitet & lastbehandling', color: '#2a7f62',
+      description: 'Tyngdepunkt, metacenter, GZ-kurver, trim, lastplanlægning og surring.',
+      teacherIds: ['u2'], studentIds: navigators,
+    },
+    {
+      id: 's-sik', code: 'SIK', name: 'Sikkerhed & beredskab', color: '#b23a48',
+      description: 'Brandbekæmpelse, redningsmidler, førstehjælp, ISM-koden og beredskabsplaner.',
+      teacherIds: ['u2'], studentIds: allStudents,
+    },
+    {
+      id: 's-met', code: 'MET', name: 'Meteorologi & oceanografi', color: '#3b7ea1',
+      description: 'Vejrsystemer, vejrkort, vind og bølger, strøm og planlægning efter vejret.',
+      teacherIds: ['u1'], studentIds: navigators,
+    },
+    {
+      id: 's-eng', code: 'ENG', name: 'Maritim engelsk', color: '#6b6b2a',
+      description: 'SMCP (Standard Marine Communication Phrases), VHF-kommunikation og fagterminologi.',
+      teacherIds: ['u1'], studentIds: navigators,
+    },
+    {
+      id: 's-som', code: 'SØM', name: 'Sømandskab', color: '#1d6f7a',
+      description: 'Fortøjning, ankring, knob og splejsninger, dæksarbejde og godt sømandskab om bord på færger.',
+      teacherIds: ['u6'], studentIds: ferry,
+    },
+    {
+      id: 's-el', code: 'EL', name: 'El-drift', color: '#c08a1e',
+      description: 'Elektriske systemer om bord, batteri-eldrift i færger, ladeanlæg og sikker betjening.',
+      teacherIds: ['u6'], studentIds: ferry,
+    },
+    {
+      id: 's-kst', code: 'KST', name: 'Kommunikation, service & turisme', color: '#8a4f7d',
+      description: 'Passagerservice, kommunikation med gæster og myndigheder, formidling og turisme i øsamfund.',
+      teacherIds: ['u6'], studentIds: ferry,
+    },
+  ];
+
+  const materials = [
+    { id: 'm1', subjectId: 's-nav', title: 'Kompendium: Kursberegning og misvisning', content: 'Gennemgang af rettevisende kurs, misvisning og deviation. Husk huskeremsen: Kompas → Magnetisk → Rettevisende (tilføj østlig, træk vestlig fra).', link: '', createdAt: days(-20), authorId: 'u1' },
+    { id: 'm2', subjectId: 's-nav', title: 'Øvelseskort 104 – Det Sydfynske Øhav', content: 'Brug kortet til opgaverne om pejlinger og strømtrekanter. Fysiske kopier ligger i navigationslokalet.', link: '', createdAt: days(-12), authorId: 'u1' },
+    { id: 'm3', subjectId: 's-tek', title: 'Totaktsdieselmotoren – opbygning', content: 'Slides og noter fra lektion 3 om krydshovedmotorer, spuleluft og turboladere.', link: '', createdAt: days(-15), authorId: 'u2' },
+    { id: 'm4', subjectId: 's-ret', title: 'COLREG – regel 1-19', content: 'Læs reglerne for styring og sejlads. Fokus på regel 13 (overhaling), 14 (modsatte kurser) og 15 (skærende kurser).', link: 'https://www.imo.org/en/About/Conventions/Pages/COLREG.aspx', createdAt: days(-10), authorId: 'u1' },
+    { id: 'm5', subjectId: 's-stab', title: 'Formelsamling – stabilitet', content: 'GM = KM − KG. Krængningsvinkel ved små vinkler: tan θ = (w · d) / (Δ · GM).', link: '', createdAt: days(-8), authorId: 'u2' },
+    { id: 'm6', subjectId: 's-sik', title: 'Brandtrekanten og slukningsmidler', content: 'Oversigt over brandklasser A–F og hvilke slukningsmidler der bruges om bord.', link: '', createdAt: days(-6), authorId: 'u2' },
+    { id: 'm7', subjectId: 's-eng', title: 'SMCP – Distress, urgency & safety', content: 'Øv MAYDAY-, PAN PAN- og SECURITE-meldinger højt i par.', link: '', createdAt: days(-4), authorId: 'u1' },
+  ];
+
+  materials.push(
+    { id: 'm8', subjectId: 's-el', title: 'Batteri-eldrift i færger – introduktion', content: 'Opbygning af batterisystemer, BMS, ladestrategi i havn og nødprocedurer ved termisk løbskhed.', link: '', createdAt: days(-5), authorId: 'u6' },
+    { id: 'm9', subjectId: 's-som', title: 'Fortøjning af små færger', content: 'Gennemgang af fortøjningsplan, snapback-zoner og kommunikation mellem bro og dæk.', link: '', createdAt: days(-9), authorId: 'u6' },
+  );
+
+  const assignments = [
+    { id: 'a1', subjectId: 's-nav', title: 'Strømtrekant – opgave 1-5', description: 'Løs opgave 1-5 i kompendiet. Vis beregninger og vedhæft eventuelt et billede af din konstruktion (indsæt link).', due: days(5), createdAt: days(-7), authorId: 'u1' },
+    { id: 'a2', subjectId: 's-ret', title: 'Case: Kollision i Storebælt', description: 'Analysér casen ud fra COLREG regel 5, 7, 8 og 15. Hvem havde vigepligten, og hvad burde være gjort anderledes?', due: days(9), createdAt: days(-3), authorId: 'u1' },
+    { id: 'a3', subjectId: 's-tek', title: 'Brændstofsystemet', description: 'Tegn og beskriv brændstofsystemet fra bunkertank til indsprøjtningsventil.', due: days(-2), createdAt: days(-14), authorId: 'u2' },
+    { id: 'a4', subjectId: 's-stab', title: 'GM-beregning efter lastning', description: 'Beregn ny KG og GM efter lastning af de tre partier i bilaget.', due: days(12), createdAt: days(-1), authorId: 'u2' },
+  ];
+
+  assignments.push(
+    { id: 'a5', subjectId: 's-kst', title: 'Serviceplan for en ø-overfart', description: 'Beskriv hvordan du vil modtage og informere passagerer på en travl sommerdag – herunder sikkerhedsinformation og handicapvenlig service.', due: days(7), createdAt: days(-2), authorId: 'u6' },
+  );
+
+  const submissions = [
+    { id: 'sub1', assignmentId: 'a3', studentId: 'u3', text: 'Brændstoffet pumpes fra bunkertanken til bundfældningstanken, derefter separatoren og dagtanken ...', submittedAt: days(-3), grade: '10', feedback: 'Flot og grundig beskrivelse. Husk viskositetsregulatoren.', gradedAt: days(-1) },
+    { id: 'sub2', assignmentId: 'a3', studentId: 'u4', text: 'Bunkertank → settling tank → separator → service tank → booster pumpe → motor.', submittedAt: days(-2), grade: null, feedback: '', gradedAt: null },
+    { id: 'sub3', assignmentId: 'a1', studentId: 'u3', text: 'Opgave 1: KDV = 087°, FOG = 9,4 kn ...', submittedAt: days(-1), grade: null, feedback: '', gradedAt: null },
+  ];
+
+  const announcements = [
+    { id: 'n1', subjectId: 's-nav', title: 'Simulatortimer i uge 48', body: 'Vi bruger broens simulator tirsdag og torsdag. Mød op kl. 08:15 i simulatorbygningen.', createdAt: days(-2), authorId: 'u1' },
+    { id: 'n2', subjectId: 's-sik', title: 'Brandkursus på Svendborg', body: 'Husk arbejdstøj og sikkerhedssko til den praktiske brandøvelse fredag.', createdAt: days(-1), authorId: 'u2' },
+    { id: 'n3', subjectId: 's-el', title: 'Praktik på færgen', body: 'Husk at notere alle ladeoperationer i jeres praktikbog – vi gennemgår dem ved næste skoleperiode.', createdAt: days(-1), authorId: 'u6' },
+  ];
+
+  // Ugeskema (1 = mandag … 5 = fredag)
+  const L = (id, subjectId, weekday, start, end, room, teacherId) => ({ id, subjectId, weekday, start, end, room, teacherId });
+  const lessons = [
+    L('l1', 's-nav', 1, '08:15', '09:45', 'Navigationslokalet', 'u1'),
+    L('l2', 's-ret', 1, '10:00', '11:30', 'Lokale 2', 'u1'),
+    L('l3', 's-tek', 1, '12:15', '13:45', 'Maskinværkstedet', 'u2'),
+    L('l4', 's-stab', 2, '08:15', '09:45', 'Lokale 3', 'u2'),
+    L('l5', 's-nav', 2, '10:00', '13:45', 'Simulatorbygningen', 'u1'),
+    L('l6', 's-met', 3, '08:15', '09:45', 'Lokale 2', 'u1'),
+    L('l7', 's-sik', 3, '10:00', '11:30', 'Lokale 1', 'u2'),
+    L('l8', 's-eng', 3, '12:15', '13:45', 'Lokale 4', 'u1'),
+    L('l9', 's-tek', 4, '08:15', '09:45', 'Maskinværkstedet', 'u2'),
+    L('l10', 's-ret', 4, '10:00', '11:30', 'Lokale 2', 'u1'),
+    L('l11', 's-nav', 5, '08:15', '11:30', 'Simulatorbygningen', 'u1'),
+    L('l12', 's-som', 1, '08:15', '11:30', 'Havnen / øvelsesbåd', 'u6'),
+    L('l13', 's-el', 2, '08:15', '11:30', 'El-laboratoriet', 'u6'),
+    L('l14', 's-kst', 4, '12:15', '13:45', 'Lokale 4', 'u6'),
+    L('l15', 's-sik', 5, '12:15', '14:30', 'Lokale 1', 'u2'),
+  ];
+
+  const messages = [
+    { id: 'msg1', fromId: 'u3', toId: 'u1', body: 'Hej Lars – må jeg aflevere strømtrekant-opgaven som foto af min konstruktion?', createdAt: days(-1), read: true },
+    { id: 'msg2', fromId: 'u1', toId: 'u3', body: 'Ja, det er helt fint. Indsæt linket i besvarelsen og skriv dine beregninger med.', createdAt: days(-0.9), read: false },
+    { id: 'msg3', fromId: 'u4', toId: 'u2', body: 'Jeg var syg i fredags – er der noter fra timen om brændstofsystemet?', createdAt: days(-0.5), read: false },
+  ];
+
+  return { users, subjects, materials, assignments, submissions, announcements, lessons, messages };
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { seed };
+else root.PortalSeed = { seed };
+})(this);
+
+</script>
+<script>
+// Marstal Navigationsskole – portalens API-logik.
+// Miljøneutral: bruges af server.js (Node) og af browser-demoen (build-demo.js).
+(function (root) {
+'use strict';
+
+function createApi(env) {
+  // env: { hashPassword, verifyPassword, randomHex, load() -> db|null, save(db), seed(hashPassword) -> db }
+  let db;
+  const sessions = new Map(); // token -> { userId, expires }
+  const newId = (prefix) => `${prefix}${env.randomHex(6)}`;
+  const saveDb = () => env.save(db);
+  function loadDb(reset = false) {
+    db = reset ? null : env.load();
+    if (db) { db.lessons = db.lessons || []; db.messages = db.messages || []; }
+    else { db = env.seed(env.hashPassword); saveDb(); }
+  }
+  const hashPassword = env.hashPassword, verifyPassword = env.verifyPassword;
+  const reply = (status, data, extra = {}) => ({ status, data, ...extra });
+  function userFromSid(sid) {
+    const s = sid && sessions.get(sid);
+    if (!s || s.expires < Date.now()) { if (s) sessions.delete(sid); return null; }
+    s.expires = Date.now() + SESSION_TTL_MS;
+    return db.users.find((u) => u.id === s.userId) || null;
+  }
+
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 timer
+const GRADES = ['12', '10', '7', '4', '02', '00', '-3']; // 7-trinsskalaen
+
+const publicUser = (u) => u && ({ id: u.id, username: u.username, name: u.name, role: u.role, className: u.className || null });
+
+// ---------- Hjælpere ----------
+class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+function str(v, field, { max = 5000, required = true } = {}) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  if (required && !s) throw new HttpError(400, `Feltet "${field}" skal udfyldes`);
+  if (s.length > max) throw new HttpError(400, `Feltet "${field}" er for langt`);
+  return s;
+}
+function safeLink(v) {
+  const s = str(v, 'link', { max: 500, required: false });
+  if (s && !/^https?:\/\//i.test(s)) throw new HttpError(400, 'Link skal starte med http:// eller https://');
+  return s;
+}
+function requireRole(user, role) {
+  if (!user) throw new HttpError(401, 'Du skal være logget ind');
+  if (role && user.role !== role) throw new HttpError(403, 'Du har ikke adgang til dette');
+}
+function subjectFor(user, subjectId) {
+  const s = db.subjects.find((x) => x.id === subjectId);
+  if (!s) throw new HttpError(404, 'Faget findes ikke');
+  const member = user.role === 'teacher' ? s.teacherIds.includes(user.id) : s.studentIds.includes(user.id);
+  if (!member) throw new HttpError(403, 'Du er ikke tilknyttet dette fag');
+  return s;
+}
+function mySubjects(user) {
+  return db.subjects.filter((s) => (user.role === 'teacher' ? s.teacherIds : s.studentIds).includes(user.id));
+}
+const nameOf = (id) => (db.users.find((u) => u.id === id) || {}).name || 'Ukendt';
+const byDateDesc = (k) => (a, b) => (b[k] || '').localeCompare(a[k] || '');
+
+function subjectSummary(s, user) {
+  const assignments = db.assignments.filter((a) => a.subjectId === s.id);
+  const base = {
+    id: s.id, code: s.code, name: s.name, color: s.color, description: s.description,
+    teachers: s.teacherIds.map(nameOf),
+    materialCount: db.materials.filter((m) => m.subjectId === s.id).length,
+    assignmentCount: assignments.length,
+  };
+  if (user.role === 'teacher') {
+    base.studentCount = s.studentIds.length;
+    base.ungraded = db.submissions.filter((x) => x.grade == null && assignments.some((a) => a.id === x.assignmentId)).length;
+  } else {
+    const mine = db.submissions.filter((x) => x.studentId === user.id && assignments.some((a) => a.id === x.assignmentId));
+    base.openAssignments = assignments.filter((a) => !mine.some((m) => m.assignmentId === a.id)).length;
+  }
+  return base;
+}
+
+function assignmentView(a, user, subject) {
+  const out = { ...a, author: nameOf(a.authorId) };
+  if (user.role === 'student') {
+    const sub = db.submissions.find((x) => x.assignmentId === a.id && x.studentId === user.id);
+    out.mySubmission = sub || null;
+  } else {
+    const subs = db.submissions.filter((x) => x.assignmentId === a.id);
+    out.submissionCount = subs.length;
+    out.ungraded = subs.filter((x) => x.grade == null).length;
+    out.studentCount = subject.studentIds.length;
+  }
+  return out;
+}
+
+// ---------- API-ruter ----------
+const routes = [];
+const route = (method, pattern, handler) => {
+  const keys = [];
+  const re = new RegExp('^' + pattern.replace(/:(\w+)/g, (_, k) => { keys.push(k); return '([^/]+)'; }) + '$');
+  routes.push({ method, re, keys, handler });
+};
+
+route('POST', '/api/login', ({ body }) => {
+  const username = str(body.username, 'brugernavn', { max: 100 }).toLowerCase();
+  const password = str(body.password, 'adgangskode', { max: 200 });
+  const user = db.users.find((u) => u.username === username);
+  if (!user || !verifyPassword(password, user.password)) throw new HttpError(401, 'Forkert brugernavn eller adgangskode');
+  const token = env.randomHex(32);
+  sessions.set(token, { userId: user.id, expires: Date.now() + SESSION_TTL_MS });
+  return reply(200, { user: publicUser(user) }, { sid: token });
+});
+
+route('POST', '/api/logout', ({ sid }) => {
+  if (sid) sessions.delete(sid);
+  return reply(200, { ok: true }, { clearSid: true });
+});
+
+route('GET', '/api/me', ({ user }) => {
+  requireRole(user);
+  return reply(200, { user: publicUser(user), grades: GRADES });
+});
+
+route('GET', '/api/dashboard', ({ user }) => {
+  requireRole(user);
+  const subs = mySubjects(user);
+  const subjectIds = new Set(subs.map((s) => s.id));
+  const subjectName = (id) => (db.subjects.find((s) => s.id === id) || {}).name;
+  const announcements = db.announcements.filter((n) => subjectIds.has(n.subjectId)).sort(byDateDesc('createdAt')).slice(0, 5)
+    .map((n) => ({ ...n, subjectName: subjectName(n.subjectId), author: nameOf(n.authorId) }));
+  const assignments = db.assignments.filter((a) => subjectIds.has(a.subjectId));
+  const today = ((new Date().getDay() + 6) % 7) + 1; // 1 = mandag … 7 = søndag
+  const out = {
+    subjects: subs.map((s) => subjectSummary(s, user)), announcements,
+    today, todayLessons: lessonsFor(user).filter((l) => l.weekday === today),
+    unreadMessages: db.messages.filter((m) => m.toId === user.id && !m.read).length,
+  };
+
+  if (user.role === 'student') {
+    const mine = db.submissions.filter((x) => x.studentId === user.id);
+    out.upcoming = assignments.filter((a) => !mine.some((m) => m.assignmentId === a.id))
+      .sort((a, b) => a.due.localeCompare(b.due))
+      .map((a) => ({ ...a, subjectName: subjectName(a.subjectId) }));
+    out.grades = mine.filter((x) => x.grade != null).sort(byDateDesc('gradedAt')).map((x) => {
+      const a = db.assignments.find((y) => y.id === x.assignmentId) || {};
+      return { ...x, assignmentTitle: a.title, subjectId: a.subjectId, subjectName: subjectName(a.subjectId) };
+    });
+  } else {
+    out.toGrade = db.submissions.filter((x) => x.grade == null && assignments.some((a) => a.id === x.assignmentId))
+      .sort((a, b) => a.submittedAt.localeCompare(b.submittedAt))
+      .map((x) => {
+        const a = assignments.find((y) => y.id === x.assignmentId);
+        return { ...x, studentName: nameOf(x.studentId), assignmentTitle: a.title, subjectId: a.subjectId, subjectName: subjectName(a.subjectId) };
+      });
+  }
+  return reply(200, out);
+});
+
+route('GET', '/api/subjects/:id', ({ user, params }) => {
+  requireRole(user);
+  const s = subjectFor(user, params.id);
+  const out = {
+    ...subjectSummary(s, user),
+    materials: db.materials.filter((m) => m.subjectId === s.id).sort(byDateDesc('createdAt')).map((m) => ({ ...m, author: nameOf(m.authorId) })),
+    assignments: db.assignments.filter((a) => a.subjectId === s.id).sort((a, b) => a.due.localeCompare(b.due)).map((a) => assignmentView(a, user, s)),
+    announcements: db.announcements.filter((n) => n.subjectId === s.id).sort(byDateDesc('createdAt')).map((n) => ({ ...n, author: nameOf(n.authorId) })),
+  };
+  if (user.role === 'teacher') {
+    out.students = s.studentIds.map((id) => publicUser(db.users.find((u) => u.id === id))).filter(Boolean);
+  }
+  return reply(200, out);
+});
+
+// Lærer: opret indhold
+route('POST', '/api/subjects/:id/materials', ({ user, params, body }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const m = { id: newId('m'), subjectId: s.id, title: str(body.title, 'titel', { max: 200 }), content: str(body.content, 'indhold', { required: false }), link: safeLink(body.link), createdAt: new Date().toISOString(), authorId: user.id };
+  db.materials.push(m); saveDb();
+  return reply(201, m);
+});
+
+route('POST', '/api/subjects/:id/assignments', ({ user, params, body }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const due = new Date(str(body.due, 'afleveringsfrist', { max: 40 }));
+  if (isNaN(due)) throw new HttpError(400, 'Ugyldig afleveringsfrist');
+  const a = { id: newId('a'), subjectId: s.id, title: str(body.title, 'titel', { max: 200 }), description: str(body.description, 'beskrivelse'), due: due.toISOString(), createdAt: new Date().toISOString(), authorId: user.id };
+  db.assignments.push(a); saveDb();
+  return reply(201, a);
+});
+
+route('POST', '/api/subjects/:id/announcements', ({ user, params, body }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const n = { id: newId('n'), subjectId: s.id, title: str(body.title, 'titel', { max: 200 }), body: str(body.body, 'tekst'), createdAt: new Date().toISOString(), authorId: user.id };
+  db.announcements.push(n); saveDb();
+  return reply(201, n);
+});
+
+// Lærer: slet indhold
+for (const [coll, label] of [['materials', 'Materialet'], ['assignments', 'Opgaven'], ['announcements', 'Opslaget']]) {
+  route('DELETE', `/api/${coll}/:id`, ({ user, params }) => {
+    requireRole(user, 'teacher');
+    const item = db[coll].find((x) => x.id === params.id);
+    if (!item) throw new HttpError(404, `${label} findes ikke`);
+    subjectFor(user, item.subjectId);
+    db[coll] = db[coll].filter((x) => x.id !== item.id);
+    if (coll === 'assignments') db.submissions = db.submissions.filter((x) => x.assignmentId !== item.id);
+    saveDb();
+    return reply(200, { ok: true });
+  });
+}
+
+// Elev: aflever opgave (kan genafleveres indtil den er bedømt)
+route('POST', '/api/assignments/:id/submissions', ({ user, params, body }) => {
+  requireRole(user, 'student');
+  const a = db.assignments.find((x) => x.id === params.id);
+  if (!a) throw new HttpError(404, 'Opgaven findes ikke');
+  subjectFor(user, a.subjectId);
+  const text = str(body.text, 'besvarelse', { max: 20000 });
+  let sub = db.submissions.find((x) => x.assignmentId === a.id && x.studentId === user.id);
+  if (sub && sub.grade != null) throw new HttpError(409, 'Opgaven er allerede bedømt og kan ikke ændres');
+  if (sub) { sub.text = text; sub.submittedAt = new Date().toISOString(); }
+  else {
+    sub = { id: newId('sub'), assignmentId: a.id, studentId: user.id, text, submittedAt: new Date().toISOString(), grade: null, feedback: '', gradedAt: null };
+    db.submissions.push(sub);
+  }
+  saveDb();
+  return reply(201, sub);
+});
+
+// Lærer: se afleveringer og giv karakter
+route('GET', '/api/assignments/:id/submissions', ({ user, params }) => {
+  requireRole(user, 'teacher');
+  const a = db.assignments.find((x) => x.id === params.id);
+  if (!a) throw new HttpError(404, 'Opgaven findes ikke');
+  const s = subjectFor(user, a.subjectId);
+  const rows = s.studentIds.map((sid) => ({
+    student: publicUser(db.users.find((u) => u.id === sid)),
+    submission: db.submissions.find((x) => x.assignmentId === a.id && x.studentId === sid) || null,
+  }));
+  return reply(200, { assignment: { ...a, subjectName: s.name }, rows });
+});
+
+route('POST', '/api/submissions/:id/grade', ({ user, params, body }) => {
+  requireRole(user, 'teacher');
+  const sub = db.submissions.find((x) => x.id === params.id);
+  if (!sub) throw new HttpError(404, 'Afleveringen findes ikke');
+  const a = db.assignments.find((x) => x.id === sub.assignmentId);
+  subjectFor(user, a.subjectId);
+  if (!GRADES.includes(body.grade)) throw new HttpError(400, 'Vælg en karakter fra 7-trinsskalaen');
+  sub.grade = body.grade;
+  sub.feedback = str(body.feedback, 'feedback', { required: false });
+  sub.gradedAt = new Date().toISOString();
+  sub.gradedBy = user.id;
+  saveDb();
+  return reply(200, sub);
+});
+
+// Lærer: karakteroversigt for et fag
+route('GET', '/api/subjects/:id/gradebook', ({ user, params }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const assignments = db.assignments.filter((a) => a.subjectId === s.id).sort((a, b) => a.due.localeCompare(b.due));
+  const rows = s.studentIds.map((sid) => ({
+    student: publicUser(db.users.find((u) => u.id === sid)),
+    cells: assignments.map((a) => {
+      const sub = db.submissions.find((x) => x.assignmentId === a.id && x.studentId === sid);
+      return sub ? { submitted: true, grade: sub.grade } : { submitted: false, grade: null };
+    }),
+  }));
+  return reply(200, { subject: { id: s.id, name: s.name }, assignments: assignments.map((a) => ({ id: a.id, title: a.title, due: a.due })), rows });
+});
+
+// ---------- Skema ----------
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+function lessonsFor(user) {
+  const subs = mySubjects(user);
+  return db.lessons.filter((l) => subs.some((s) => s.id === l.subjectId))
+    .map((l) => {
+      const s = subs.find((x) => x.id === l.subjectId);
+      return { ...l, subjectName: s.name, subjectCode: s.code, color: s.color, teacher: nameOf(l.teacherId) };
+    })
+    .sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start));
+}
+route('GET', '/api/schedule', ({ user }) => {
+  requireRole(user);
+  return reply(200, { lessons: lessonsFor(user) });
+});
+route('POST', '/api/subjects/:id/lessons', ({ user, params, body }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const weekday = Number(body.weekday);
+  if (!(weekday >= 1 && weekday <= 5)) throw new HttpError(400, 'Vælg en ugedag (mandag–fredag)');
+  const start = str(body.start, 'starttid', { max: 5 }), end = str(body.end, 'sluttid', { max: 5 });
+  if (!TIME_RE.test(start) || !TIME_RE.test(end) || end <= start) throw new HttpError(400, 'Ugyldigt tidsrum');
+  const l = { id: newId('l'), subjectId: s.id, weekday, start, end, room: str(body.room, 'lokale', { max: 80, required: false }), teacherId: user.id };
+  db.lessons.push(l); saveDb();
+  return reply(201, l);
+});
+route('DELETE', '/api/lessons/:id', ({ user, params }) => {
+  requireRole(user, 'teacher');
+  const l = db.lessons.find((x) => x.id === params.id);
+  if (!l) throw new HttpError(404, 'Lektionen findes ikke');
+  subjectFor(user, l.subjectId);
+  db.lessons = db.lessons.filter((x) => x.id !== l.id); saveDb();
+  return reply(200, { ok: true });
+});
+
+// ---------- Beskeder (elev ↔ lærer i fælles fag) ----------
+function contactsOf(user) {
+  const ids = new Set();
+  for (const s of mySubjects(user)) (user.role === 'teacher' ? s.studentIds : s.teacherIds).forEach((id) => ids.add(id));
+  ids.delete(user.id);
+  return [...ids].map((id) => db.users.find((u) => u.id === id)).filter(Boolean);
+}
+route('GET', '/api/messages', ({ user }) => {
+  requireRole(user);
+  const threads = contactsOf(user).map((c) => {
+    const msgs = db.messages.filter((m) => (m.fromId === user.id && m.toId === c.id) || (m.fromId === c.id && m.toId === user.id))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return {
+      contact: publicUser(c),
+      subjects: mySubjects(user).filter((s) => [...s.teacherIds, ...s.studentIds].includes(c.id)).map((s) => s.name),
+      unread: msgs.filter((m) => m.toId === user.id && !m.read).length,
+      last: msgs[msgs.length - 1] || null,
+      messages: msgs.map((m) => ({ ...m, mine: m.fromId === user.id })),
+    };
+  }).sort((a, b) => (b.last ? b.last.createdAt : '').localeCompare(a.last ? a.last.createdAt : '') || a.contact.name.localeCompare(b.contact.name));
+  return reply(200, { threads });
+});
+route('POST', '/api/messages', ({ user, body }) => {
+  requireRole(user);
+  const to = contactsOf(user).find((c) => c.id === body.toId);
+  if (!to) throw new HttpError(403, 'Du kan kun skrive til dine lærere/elever');
+  const m = { id: newId('msg'), fromId: user.id, toId: to.id, body: str(body.body, 'besked', { max: 5000 }), createdAt: new Date().toISOString(), read: false };
+  db.messages.push(m); saveDb();
+  return reply(201, m);
+});
+route('POST', '/api/messages/read/:contactId', ({ user, params }) => {
+  requireRole(user);
+  let n = 0;
+  for (const m of db.messages) if (m.toId === user.id && m.fromId === params.contactId && !m.read) { m.read = true; n++; }
+  if (n) saveDb();
+  return reply(200, { ok: true, marked: n });
+});
+
+  // Kør en API-forespørgsel: returnerer { status, data, sid?, clearSid? }
+  function handle(method, pathname, body, sid) {
+    try {
+      for (const r of routes) {
+        const m = r.method === method && r.re.exec(pathname);
+        if (!m) continue;
+        const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
+        return r.handler({ user: userFromSid(sid), params, body: body || {}, sid });
+      }
+      throw new HttpError(404, 'Ukendt adresse');
+    } catch (err) {
+      if (!(err instanceof HttpError)) console.error(err);
+      return reply(err.status || 500, { error: err instanceof HttpError ? err.message : 'Der opstod en fejl på serveren' });
+    }
+  }
+
+  // Bruges af browser-demoen til at genoprette et login efter genindlæsning.
+  function sessionFor(userId) {
+    if (!db.users.some((u) => u.id === userId)) return null;
+    const token = env.randomHex(32);
+    sessions.set(token, { userId, expires: Date.now() + SESSION_TTL_MS });
+    return token;
+  }
+  function userIdFor(sid) { const u = userFromSid(sid); return u ? u.id : null; }
+
+  return { handle, loadDb, sessionFor, userIdFor, HttpError };
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { createApi };
+else root.PortalApi = { createApi };
+})(this);
+
+</script>
+<script>
+
+(function () {
+  'use strict';
+  var KEY = 'marstal-portal-demo-v1';
+  var store = {
+    get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { window.localStorage.removeItem(k); } catch (e) {} },
+  };
+  function randomHex(n) {
+    var a = new Uint8Array(n); crypto.getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  // Demo: adgangskoderne er offentlige demo-koder, så de gemmes ukrypteret i browseren.
+  var api = PortalApi.createApi({
+    seed: PortalSeed.seed,
+    hashPassword: function (pw) { return 'demo:' + pw; },
+    verifyPassword: function (pw, stored) { return stored === 'demo:' + pw; },
+    randomHex: randomHex,
+    load: function () { var raw = store.get(KEY + ':db'); try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; } },
+    save: function (db) { store.set(KEY + ':db', JSON.stringify(db)); },
+  });
+  api.loadDb(false);
+
+  var ss = {
+    get: function (k) { try { return window.sessionStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { window.sessionStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { window.sessionStorage.removeItem(k); } catch (e) {} },
+  };
+  var sid = ss.get(KEY + ':user') ? api.sessionFor(ss.get(KEY + ':user')) : null;
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    var u = new URL(url, 'http://demo.local');
+    if (u.pathname.indexOf('/api/') !== 0) return realFetch(url, opts);
+    opts = opts || {};
+    var body = {};
+    try { body = opts.body ? JSON.parse(opts.body) : {}; } catch (e) {}
+    var out = api.handle((opts.method || 'GET').toUpperCase(), u.pathname, body, sid);
+    if (out.sid) { sid = out.sid; ss.set(KEY + ':user', api.userIdFor(sid)); }
+    if (out.clearSid) { sid = null; ss.del(KEY + ':user'); }
+    return Promise.resolve(new Response(JSON.stringify(out.data), { status: out.status, headers: { 'Content-Type': 'application/json' } }));
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var bar = document.createElement('div');
+    bar.className = 'demo-bar';
+    var txt = document.createElement('span');
+    txt.textContent = 'Demo – det du laver gemmes kun i din egen browser.';
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn ghost small'; btn.textContent = 'Nulstil demo';
+    var armed = false;
+    btn.addEventListener('click', function () {
+      if (!armed) { armed = true; btn.textContent = 'Klik igen for at nulstille'; return; }
+      store.del(KEY + ':db'); ss.del(KEY + ':user'); api.loadDb(true); sid = null; location.hash = '#/login'; location.reload();
+    });
+    bar.appendChild(txt); bar.appendChild(btn);
+    document.body.appendChild(bar);
+  });
+})();
+
+</script>
+<script>
+// Marstal Navigationsskole – portal (klient)
+'use strict';
+
+const state = { user: null, grades: [], unread: 0 };
+const app = document.getElementById('app');
+
+// ---------- Hjælpere ----------
+// h('div.card', {onclick}, children...) – bygger DOM sikkert (ingen innerHTML).
+function h(tag, attrs, ...children) {
+  const [name, ...classes] = tag.split('.');
+  const el = document.createElement(name || 'div');
+  if (classes.length) el.className = classes.join(' ');
+  if (attrs && (typeof attrs !== 'object' || attrs instanceof Node || Array.isArray(attrs))) { children.unshift(attrs); attrs = null; }
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'accent') el.style.setProperty('--accent', v);
+    else if (k === 'class') el.className += ' ' + v;
+    else if (k in el && k !== 'list') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method, credentials: 'same-origin',
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && url !== '/api/login') { state.user = null; location.hash = '#/login'; }
+  if (!res.ok) throw new Error(data.error || 'Noget gik galt');
+  return data;
+}
+
+let toastTimer;
+function toast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (isError ? ' error' : ''); t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3200);
+}
+
+const fmtDate = (iso) => new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' });
+const fmtDateTime = (iso) => new Date(iso).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function dueInfo(iso) {
+  const d = Math.ceil((new Date(iso) - Date.now()) / 86400000);
+  if (d < 0) return h('span.pill.bad', `Overskredet (${fmtDate(iso)})`);
+  if (d <= 3) return h('span.pill.warn', d === 0 ? 'Afleveres i dag' : `Om ${d} dag${d === 1 ? '' : 'e'}`);
+  return h('span.pill', `Frist ${fmtDate(iso)}`);
+}
+const isTeacher = () => state.user && state.user.role === 'teacher';
+const formData = (form) => Object.fromEntries(new FormData(form).entries());
+function linkify(url) { return url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, 'Åbn link ↗') : null; }
+
+function render(...nodes) { app.replaceChildren(...nodes.flat(Infinity).filter((n) => n != null && n !== false)); window.scrollTo(0, 0); }
+function loading() { render(h('p.muted', 'Indlæser …')); }
+
+// Formular der sender data og kalder onDone ved succes.
+function submitForm(form, fn, okMsg) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    if (btn) btn.disabled = true;
+    try { await fn(formData(form)); if (okMsg) toast(okMsg); }
+    catch (err) { toast(err.message, true); }
+    finally { if (btn) btn.disabled = false; }
+  });
+  return form;
+}
+
+// ---------- Topbar ----------
+function updateChrome() {
+  const bar = document.getElementById('topbar');
+  if (!state.user) { bar.hidden = true; return; }
+  bar.hidden = false;
+  document.getElementById('userName').textContent = state.user.name;
+  document.getElementById('roleBadge').textContent = isTeacher() ? 'Lærer' : 'Elev';
+  const nav = document.getElementById('topnav');
+  const current = location.hash || '#/';
+  const links = [['#/', 'Forside'], ['#/skema', 'Skema'], ['#/fag', 'Mine fag'], ['#/beskeder', 'Beskeder']];
+  if (!isTeacher()) links.push(['#/karakterer', 'Karakterer']);
+  const badge = h('span.badge', { hidden: !state.unread }, String(state.unread || ''));
+  nav.replaceChildren(...links.map(([href, label]) =>
+    h('a', { href, class: (current === href || (href !== '#/' && current.startsWith(href))) ? 'active' : '' }, label, href === '#/beskeder' ? badge : null)));
+  refreshUnread(badge);
+}
+async function refreshUnread(badge) {
+  try {
+    const { threads } = await api('GET', '/api/messages');
+    state.unread = threads.reduce((n, t) => n + t.unread, 0);
+    badge.textContent = String(state.unread); badge.hidden = !state.unread;
+  } catch { /* ignore */ }
+}
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await api('POST', '/api/logout').catch(() => {});
+  state.user = null; location.hash = '#/login';
+});
+
+// ---------- Login ----------
+function viewLogin() {
+  let role = 'student';
+  const err = h('div.error');
+  const userInput = h('input', { name: 'username', autocomplete: 'username', required: true, placeholder: 'f.eks. anna' });
+  const passInput = h('input', { name: 'password', type: 'password', autocomplete: 'current-password', required: true });
+  const roleBtns = ['student', 'teacher'].map((r) => h('button', {
+    type: 'button', class: r === role ? 'active' : '',
+    onclick: (e) => {
+      role = r; roleBtns.forEach((b) => b.classList.remove('active')); e.currentTarget.classList.add('active');
+      userInput.placeholder = r === 'teacher' ? 'f.eks. lars' : 'f.eks. anna';
+    },
+  }, r === 'teacher' ? '🧭 Lærerportal' : '🎓 Elevportal'));
+
+  const form = h('form.form',
+    h('div.role-switch', roleBtns),
+    h('label', 'Brugernavn', userInput),
+    h('label', 'Adgangskode', passInput),
+    err,
+    h('button.btn', { type: 'submit' }, 'Log ind'));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); err.textContent = '';
+    try {
+      const { user } = await api('POST', '/api/login', formData(form));
+      if (user.role !== role) {
+        err.textContent = `Denne bruger er ${user.role === 'teacher' ? 'lærer' : 'elev'} – du sendes til ${user.role === 'teacher' ? 'lærerportalen' : 'elevportalen'}.`;
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+      await boot('#/');
+    } catch (ex) { err.textContent = ex.message; }
+  });
+
+  render(h('div.login-wrap', h('div.card.login-card',
+    h('div.logo', h('img', { src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzAiIGZpbGw9IiMwYjJlNGYiLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNmMmMxNGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxjaXJjbGUgY3g9IjMyIiBjeT0iMTUiIHI9IjUiLz4KICAgIDxsaW5lIHgxPSIzMiIgeTE9IjIwIiB4Mj0iMzIiIHkyPSI1MiIvPgogICAgPGxpbmUgeDE9IjIyIiB5MT0iMjgiIHgyPSI0MiIgeTI9IjI4Ii8+CiAgICA8cGF0aCBkPSJNMTQgMzhjMiA5IDkgMTQgMTggMTRzMTYtNSAxOC0xNCIvPgogIDwvZz4KPC9zdmc+Cg==', alt: '', width: 44, height: 44 }),
+      h('div', h('h1', 'Marstal Navigationsskole'), h('div.muted.small', 'Portal for elever og lærere'))),
+    form,
+    h('div.demo', h('strong', 'Demo-brugere'), h('br'),
+      'Elever: anna, jonas, freja – adgangskode ', h('code', 'elev123'), h('br'),
+      'Lærere: lars, mette, peter – adgangskode ', h('code', 'laerer123')))));
+  userInput.focus();
+}
+
+// ---------- Forside / dashboard ----------
+function subjectCard(s) {
+  const meta = [h('span.pill', `${s.materialCount} materialer`), h('span.pill', `${s.assignmentCount} opgaver`)];
+  if (isTeacher()) {
+    meta.push(h('span.pill', `${s.studentCount} elever`));
+    if (s.ungraded) meta.push(h('span.pill.warn', `${s.ungraded} til bedømmelse`));
+  } else if (s.openAssignments) meta.push(h('span.pill.warn', `${s.openAssignments} ikke afleveret`));
+  return h('a.card.subject-card', { href: `#/fag/${s.id}`, accent: s.color },
+    h('div.code', s.code), h('h3', s.name),
+    h('p.muted.small', s.description),
+    h('div.small.muted', 'Underviser: ', s.teachers.join(', ')),
+    h('div.meta', meta));
+}
+
+function announcementList(items, showSubject) {
+  if (!items.length) return h('p.empty', 'Ingen opslag endnu.');
+  return h('ul.list', items.map((n) => h('li',
+    h('div.row', h('strong', n.title), h('span.muted.small', fmtDate(n.createdAt))),
+    showSubject ? h('div.small.muted', n.subjectName, ' · ', n.author) : h('div.small.muted', n.author),
+    h('p.prewrap', n.body))));
+}
+
+async function viewDashboard() {
+  loading();
+  const d = await api('GET', '/api/dashboard');
+  const hello = h('div.hero',
+    h('h1', `Velkommen, ${state.user.name.split(' ')[0]}`),
+    h('p', isTeacher() ? 'Lærerportal – overblik over dine fag, afleveringer og opslag.' : `Elevportal · ${state.user.className || ''}`));
+  const todayCard = h('div.card',
+    h('div.row', h('h2', `I dag · ${WEEKDAYS[d.today - 1] || ''}`), h('a.small', { href: '#/skema' }, 'Hele ugen →')),
+    d.todayLessons.length ? h('ul.list', d.todayLessons.map(lessonItem)) : h('p.empty', d.today > 5 ? 'Weekend – ingen undervisning.' : 'Ingen lektioner i dag.'),
+    d.unreadMessages ? h('p', h('a.btn.small', { href: '#/beskeder' }, `✉ ${d.unreadMessages} ulæst${d.unreadMessages === 1 ? '' : 'e'} besked${d.unreadMessages === 1 ? '' : 'er'}`)) : null);
+
+  let left;
+  if (isTeacher()) {
+    left = h('div.card',
+      h('h2', 'Afleveringer der venter på bedømmelse'),
+      d.toGrade.length ? h('ul.list', d.toGrade.map((x) => h('li',
+        h('div.row', h('div', h('strong', x.studentName), ' – ', x.assignmentTitle, h('div.small.muted', x.subjectName, ' · afleveret ', fmtDateTime(x.submittedAt))),
+          h('a.btn.small', { href: `#/opgave/${x.assignmentId}` }, 'Bedøm'))))) : h('p.empty', 'Alt er bedømt 🎉'));
+  } else {
+    left = h('div.card',
+      h('h2', 'Kommende afleveringer'),
+      d.upcoming.length ? h('ul.list', d.upcoming.map((a) => h('li',
+        h('div.row', h('div', h('a', { href: `#/fag/${a.subjectId}/opgaver` }, a.title), h('div.small.muted', a.subjectName)), dueInfo(a.due))))) : h('p.empty', 'Du har ingen udestående opgaver.'),
+      d.grades.length ? [h('h2', 'Seneste karakterer'), h('ul.list', d.grades.slice(0, 4).map((g) => h('li',
+        h('div.row', h('div', h('strong', g.assignmentTitle), h('div.small.muted', g.subjectName)), h('span.grade-big', g.grade)))))] : null);
+  }
+
+  render(hello,
+    h('div.grid.two', h('div.stack', todayCard, left), h('div.card', h('h2', 'Seneste opslag'), announcementList(d.announcements, true))),
+    h('div.section-title', h('h2', 'Mine fag')),
+    h('div.grid.subjects', d.subjects.map(subjectCard)));
+}
+
+async function viewSubjects() {
+  loading();
+  const d = await api('GET', '/api/dashboard');
+  render(h('div.section-title', h('h1', 'Mine fag')), h('div.grid.subjects', d.subjects.map(subjectCard)));
+}
+
+// ---------- Fagside ----------
+async function viewSubject(id, tab = 'opslag') {
+  loading();
+  const s = await api('GET', `/api/subjects/${id}`);
+  const reload = (t) => viewSubject(id, t);
+  const tabs = [['opslag', 'Opslag'], ['materialer', 'Materialer'], ['opgaver', 'Opgaver'], ['skema', 'Skema']];
+  if (isTeacher()) tabs.push(['elever', 'Elever'], ['karakterbog', 'Karakterbog']);
+  if (!tabs.some(([k]) => k === tab)) tab = 'opslag';
+
+  const body = h('div');
+  const tabBar = h('div.tabs', tabs.map(([k, label]) => h('button', {
+    type: 'button', class: k === tab ? 'active' : '',
+    onclick: () => { history.replaceState(null, '', `#/fag/${id}/${k}`); reload(k); },
+  }, label)));
+
+  const views = {
+    opslag: () => [
+      isTeacher() && creator('Nyt opslag', [
+        h('label', 'Titel', h('input', { name: 'title', required: true })),
+        h('label', 'Tekst', h('textarea', { name: 'body', required: true })),
+      ], (data) => api('POST', `/api/subjects/${id}/announcements`, data).then(() => reload('opslag')), 'Opslaget er offentliggjort'),
+      h('div.card', s.announcements.length ? h('ul.list', s.announcements.map((n) => h('li',
+        h('div.row', h('strong', n.title), h('span.muted.small', fmtDate(n.createdAt))),
+        h('div.small.muted', n.author), h('p.prewrap', n.body),
+        isTeacher() && deleteBtn(`/api/announcements/${n.id}`, () => reload('opslag'))))) : h('p.empty', 'Ingen opslag endnu.')),
+    ],
+    materialer: () => [
+      isTeacher() && creator('Upload nyt materiale', [
+        h('label', 'Titel', h('input', { name: 'title', required: true })),
+        h('label', 'Indhold / noter', h('textarea', { name: 'content' })),
+        h('label', 'Link (valgfrit)', h('input', { name: 'link', type: 'url', placeholder: 'https://…' })),
+      ], (data) => api('POST', `/api/subjects/${id}/materials`, data).then(() => reload('materialer')), 'Materialet er tilføjet'),
+      s.materials.length ? s.materials.map((m) => h('div.card',
+        h('div.row', h('h3', '📘 ', m.title), h('span.muted.small', fmtDate(m.createdAt))),
+        m.content && h('p.prewrap', m.content),
+        h('div.actions', linkify(m.link), isTeacher() && deleteBtn(`/api/materials/${m.id}`, () => reload('materialer'))))) : h('div.card', h('p.empty', 'Ingen materialer endnu.')),
+    ],
+    opgaver: () => [
+      isTeacher() && creator('Opret ny opgave', [
+        h('label', 'Titel', h('input', { name: 'title', required: true })),
+        h('label', 'Beskrivelse', h('textarea', { name: 'description', required: true })),
+        h('label', 'Afleveringsfrist', h('input', { name: 'due', type: 'datetime-local', required: true })),
+      ], (data) => api('POST', `/api/subjects/${id}/assignments`, { ...data, due: new Date(data.due).toISOString() }).then(() => reload('opgaver')), 'Opgaven er oprettet'),
+      s.assignments.length ? s.assignments.map((a) => assignmentCard(a, () => reload('opgaver'))) : h('div.card', h('p.empty', 'Ingen opgaver endnu.')),
+    ],
+    elever: () => h('div.card', h('h2', `Elever (${s.students.length})`), h('div.table-wrap', h('table',
+      h('thead', h('tr', h('th', 'Navn'), h('th', 'Brugernavn'), h('th', 'Hold'))),
+      h('tbody', s.students.map((st) => h('tr', h('td', st.name), h('td', st.username), h('td', st.className || '–'))))))),
+    karakterbog: () => gradebook(id),
+    skema: () => subjectSchedule(id, () => reload('skema')),
+  };
+
+  body.append(...[views[tab]()].flat(Infinity).filter(Boolean));
+  body.classList.add('stack');
+  render(
+    h('div.hero.subject-hero', { accent: s.color },
+      h('div.small', h('a', { href: '#/fag', class: 'backlink' }, '← Mine fag')),
+      h('h1', `${s.code} · ${s.name}`), h('p', s.description), h('p.small', 'Underviser: ', s.teachers.join(', '))),
+    tabBar, body);
+  document.querySelectorAll('.backlink').forEach((a) => a.style.setProperty('color', '#fff'));
+}
+
+function creator(title, fields, onSubmit, okMsg) {
+  const form = submitForm(h('form.form', fields, h('div.actions', h('button.btn', { type: 'submit' }, 'Gem'))), onSubmit, okMsg);
+  return h('details.card.creator', h('summary', '＋ ', title), form);
+}
+
+// Slet med bekræftelse i selve knappen (første klik spørger, andet klik sletter).
+function deleteBtn(url, after) {
+  let armed = false, timer;
+  const btn = h('button.btn.danger.small', {
+    type: 'button',
+    onclick: async () => {
+      if (!armed) {
+        armed = true; btn.textContent = 'Klik igen for at slette';
+        timer = setTimeout(() => { armed = false; btn.textContent = 'Slet'; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      try { await api('DELETE', url); toast('Slettet'); after(); } catch (e) { toast(e.message, true); }
+    },
+  }, 'Slet');
+  return btn;
+}
+
+function assignmentCard(a, reload) {
+  const head = h('div.row', h('h3', '📝 ', a.title), dueInfo(a.due));
+  const desc = h('p.prewrap', a.description);
+  if (isTeacher()) {
+    return h('div.card', head, desc,
+      h('div.actions',
+        h('span.pill', `${a.submissionCount}/${a.studentCount} afleveret`),
+        a.ungraded ? h('span.pill.warn', `${a.ungraded} til bedømmelse`) : null,
+        h('a.btn.small', { href: `#/opgave/${a.id}` }, 'Se afleveringer'),
+        deleteBtn(`/api/assignments/${a.id}`, reload)));
+  }
+  const sub = a.mySubmission;
+  if (sub && sub.grade != null) {
+    return h('div.card', head, desc,
+      h('div.row', h('div', h('strong', 'Din besvarelse'), h('div.small.muted', 'Afleveret ', fmtDateTime(sub.submittedAt))), h('div', h('span.muted.small', 'Karakter '), h('span.grade-big', sub.grade))),
+      h('div.submission-text', sub.text),
+      sub.feedback && h('p', h('strong', 'Feedback: '), sub.feedback));
+  }
+  const form = submitForm(h('form.form',
+    h('label', sub ? 'Din besvarelse (du kan rette indtil den er bedømt)' : 'Din besvarelse',
+      h('textarea', { name: 'text', required: true, value: sub ? sub.text : '' })),
+    h('div.actions', h('button.btn', { type: 'submit' }, sub ? 'Opdater aflevering' : 'Aflever'),
+      sub && h('span.pill.ok', `Afleveret ${fmtDateTime(sub.submittedAt)}`))),
+  (data) => api('POST', `/api/assignments/${a.id}/submissions`, data).then(reload), 'Din opgave er afleveret ✔');
+  return h('div.card', head, desc, form);
+}
+
+function gradebook(id) {
+  const wrap = h('div.card', h('p.muted', 'Indlæser karakterbog …'));
+  (async () => {
+    const g = await api('GET', `/api/subjects/${id}/gradebook`);
+    if (!g.assignments.length) { wrap.replaceChildren(h('p.empty', 'Ingen opgaver endnu.')); return; }
+    wrap.replaceChildren(h('h2', 'Karakterbog'), h('div.table-wrap', h('table',
+      h('thead', h('tr', h('th', 'Elev'), g.assignments.map((a) => h('th', h('a', { href: `#/opgave/${a.id}` }, a.title))))),
+      h('tbody', g.rows.map((r) => h('tr', h('td', r.student.name),
+        r.cells.map((c) => h('td.grade', c.grade != null ? c.grade : c.submitted ? h('span.pill.warn', 'Afventer') : h('span.muted', '–')))))))));
+  })().catch((e) => wrap.replaceChildren(h('p.error', e.message)));
+  return wrap;
+}
+
+// ---------- Lærer: bedøm afleveringer ----------
+async function viewAssignment(id) {
+  loading();
+  const d = await api('GET', `/api/assignments/${id}/submissions`);
+  const a = d.assignment;
+  render(
+    h('div.small', h('a', { href: `#/fag/${a.subjectId}/opgaver` }, `← ${a.subjectName}`)),
+    h('div.section-title', h('div', h('h1', a.title), h('div.muted', a.subjectName)), dueInfo(a.due)),
+    h('div.card', h('p.prewrap', a.description)),
+    h('div.section-title', h('h2', 'Afleveringer')),
+    h('div.stack', d.rows.map((r) => gradeCard(r, () => viewAssignment(id)))));
+}
+
+function gradeCard({ student, submission: sub }, reload) {
+  if (!sub) return h('div.card', h('div.row', h('strong', student.name), h('span.pill.bad', 'Ikke afleveret')));
+  const select = h('select', { name: 'grade', required: true },
+    h('option', { value: '' }, 'Vælg karakter …'),
+    state.grades.map((g) => h('option', { value: g, selected: sub.grade === g }, g)));
+  const form = submitForm(h('form.form',
+    h('div.grid.two', h('label', 'Karakter (7-trinsskala)', select),
+      h('label', 'Feedback til eleven', h('textarea', { name: 'feedback', value: sub.feedback || '' }))),
+    h('div.actions', h('button.btn', { type: 'submit' }, sub.grade != null ? 'Opdater bedømmelse' : 'Gem bedømmelse'))),
+  (data) => api('POST', `/api/submissions/${sub.id}/grade`, data).then(reload), `Bedømmelse gemt for ${student.name}`);
+  return h('div.card',
+    h('div.row', h('div', h('strong', student.name), h('div.small.muted', 'Afleveret ', fmtDateTime(sub.submittedAt))),
+      sub.grade != null ? h('span.grade-big', sub.grade) : h('span.pill.warn', 'Afventer bedømmelse')),
+    h('div.submission-text', sub.text), form);
+}
+
+// ---------- Elev: karakteroversigt ----------
+async function viewGrades() {
+  loading();
+  const d = await api('GET', '/api/dashboard');
+  const numeric = d.grades.map((g) => Number(g.grade));
+  const avg = numeric.length ? (numeric.reduce((a, b) => a + b, 0) / numeric.length).toFixed(1).replace('.', ',') : '–';
+  render(
+    h('div.section-title', h('h1', 'Mine karakterer'), h('div', h('span.muted', 'Gennemsnit '), h('span.grade-big', avg))),
+    h('div.card', d.grades.length ? h('div.table-wrap', h('table',
+      h('thead', h('tr', h('th', 'Fag'), h('th', 'Opgave'), h('th', 'Bedømt'), h('th', 'Karakter'), h('th', 'Feedback'))),
+      h('tbody', d.grades.map((g) => h('tr',
+        h('td', h('a', { href: `#/fag/${g.subjectId}/opgaver` }, g.subjectName)), h('td', g.assignmentTitle),
+        h('td', fmtDate(g.gradedAt)), h('td.grade', g.grade), h('td', g.feedback || '–'))))))
+      : h('p.empty', 'Du har ikke fået nogen karakterer endnu.')));
+}
+
+// ---------- Skema ----------
+const WEEKDAYS = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
+function lessonItem(l) {
+  return h('li.lesson', { accent: l.color },
+    h('div.row', h('div', h('strong', `${l.start}–${l.end}`), h('div', h('a', { href: `#/fag/${l.subjectId}` }, l.subjectName))),
+      h('span.pill', l.subjectCode)),
+    h('div.small.muted', [l.room, l.teacher].filter(Boolean).join(' · ')));
+}
+
+async function viewSchedule() {
+  loading();
+  const { lessons } = await api('GET', '/api/schedule');
+  const today = ((new Date().getDay() + 6) % 7) + 1;
+  render(
+    h('div.section-title', h('h1', 'Mit skema'), h('span.muted', isTeacher() ? 'Dine lektioner' : state.user.className || '')),
+    h('div.week', WEEKDAYS.slice(0, 5).map((day, i) => {
+      const ls = lessons.filter((l) => l.weekday === i + 1);
+      return h('div.card.day', { class: i + 1 === today ? 'today' : '' },
+        h('h3', day, i + 1 === today ? h('span.pill.ok', 'I dag') : null),
+        ls.length ? h('ul.list', ls.map(lessonItem)) : h('p.empty.small', 'Ingen lektioner'));
+    })),
+    isTeacher() ? h('p.small.muted', 'Tilføj eller fjern lektioner under fanen “Skema” i det enkelte fag.') : null);
+}
+
+function subjectSchedule(id, reload) {
+  const wrap = h('div.stack', h('div.card', h('p.muted', 'Indlæser skema …')));
+  (async () => {
+    const { lessons } = await api('GET', '/api/schedule');
+    const mine = lessons.filter((l) => l.subjectId === id);
+    const list = h('div.card', h('h2', 'Ugentlige lektioner'),
+      mine.length ? h('ul.list', mine.map((l) => h('li', h('div.row',
+        h('div', h('strong', `${WEEKDAYS[l.weekday - 1]} ${l.start}–${l.end}`), h('div.small.muted', [l.room, l.teacher].filter(Boolean).join(' · '))),
+        isTeacher() ? deleteBtn(`/api/lessons/${l.id}`, reload) : null)))) : h('p.empty', 'Ingen lektioner i skemaet.'));
+    wrap.replaceChildren(...[
+      isTeacher() && creator('Tilføj lektion', [
+        h('div.grid.three',
+          h('label', 'Ugedag', h('select', { name: 'weekday', required: true }, WEEKDAYS.slice(0, 5).map((d, i) => h('option', { value: i + 1 }, d)))),
+          h('label', 'Fra', h('input', { name: 'start', type: 'time', required: true, value: '08:15' })),
+          h('label', 'Til', h('input', { name: 'end', type: 'time', required: true, value: '09:45' }))),
+        h('label', 'Lokale', h('input', { name: 'room', placeholder: 'f.eks. Simulatorbygningen' })),
+      ], (data) => api('POST', `/api/subjects/${id}/lessons`, data).then(reload), 'Lektionen er tilføjet'),
+      list].filter(Boolean));
+  })().catch((e) => wrap.replaceChildren(h('p.error', e.message)));
+  return wrap;
+}
+
+// ---------- Beskeder ----------
+async function viewMessages(contactId) {
+  loading();
+  const { threads } = await api('GET', '/api/messages');
+  if (!contactId && threads.length) contactId = (threads.find((t) => t.unread) || threads[0]).contact.id;
+  const t = threads.find((x) => x.contact.id === contactId);
+  if (t && t.unread) { await api('POST', `/api/messages/read/${t.contact.id}`).catch(() => {}); t.unread = 0; updateChrome(); }
+
+  const list = h('div.card.threads', h('h2', isTeacher() ? 'Elever' : 'Lærere'),
+    threads.length ? h('ul.list', threads.map((x) => h('li', { class: x.contact.id === contactId ? 'selected' : '' },
+      h('a.thread', { href: `#/beskeder/${x.contact.id}` },
+        h('div.row', h('strong', x.contact.name), x.unread ? h('span.badge', String(x.unread)) : null),
+        h('div.small.muted', x.last ? (x.last.mine ? 'Dig: ' : '') + x.last.body.slice(0, 60) : x.subjects.join(', ')))))) : h('p.empty', 'Ingen kontakter.'));
+
+  let convo;
+  if (!t) convo = h('div.card', h('p.empty', 'Vælg en person for at skrive.'));
+  else {
+    const box = h('div.messages', t.messages.length ? t.messages.map((m) => h('div.msg', { class: m.mine ? 'mine' : '' },
+      h('div.prewrap', m.body), h('div.small.meta', fmtDateTime(m.createdAt)))) : h('p.empty', 'Ingen beskeder endnu – skriv den første.'));
+    const form = submitForm(h('form.form.compose',
+      h('textarea', { name: 'body', required: true, placeholder: `Skriv til ${t.contact.name} …` }),
+      h('div.actions', h('button.btn', { type: 'submit' }, 'Send'))),
+    (data) => api('POST', '/api/messages', { toId: t.contact.id, body: data.body }).then(() => viewMessages(t.contact.id)), 'Besked sendt');
+    convo = h('div.card.convo',
+      h('div', h('h2', t.contact.name), h('div.small.muted', [t.contact.role === 'teacher' ? 'Lærer' : t.contact.className, t.subjects.join(', ')].filter(Boolean).join(' · '))),
+      box, form);
+    setTimeout(() => { box.scrollTop = box.scrollHeight; }, 0);
+  }
+  render(h('div.section-title', h('h1', 'Beskeder')), h('div.msg-layout', list, convo));
+}
+
+// ---------- Router ----------
+async function router() {
+  const hash = location.hash || '#/';
+  if (!state.user) {
+    updateChrome();
+    if (hash !== '#/login') location.hash = '#/login'; else viewLogin();
+    return;
+  }
+  if (hash === '#/login') { location.hash = '#/'; return; }
+  updateChrome();
+  const parts = hash.slice(2).split('/').filter(Boolean);
+  try {
+    if (!parts.length) await viewDashboard();
+    else if (parts[0] === 'fag' && parts[1]) await viewSubject(parts[1], parts[2]);
+    else if (parts[0] === 'fag') await viewSubjects();
+    else if (parts[0] === 'opgave' && parts[1] && isTeacher()) await viewAssignment(parts[1]);
+    else if (parts[0] === 'karakterer' && !isTeacher()) await viewGrades();
+    else if (parts[0] === 'skema') await viewSchedule();
+    else if (parts[0] === 'beskeder') await viewMessages(parts[1]);
+    else render(h('div.card', h('h1', 'Siden findes ikke'), h('a', { href: '#/' }, 'Til forsiden')));
+  } catch (e) {
+    render(h('div.card', h('h2', 'Der opstod en fejl'), h('p.error', e.message), h('a', { href: '#/' }, 'Til forsiden')));
+  }
+}
+
+async function boot(target) {
+  try { const me = await api('GET', '/api/me'); state.user = me.user; state.grades = me.grades; }
+  catch { state.user = null; }
+  if (target && location.hash !== target) location.hash = target; else router();
+}
+window.addEventListener('hashchange', router);
+boot();
+
+</script>
+</body>
+</html>

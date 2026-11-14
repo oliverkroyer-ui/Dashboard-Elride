@@ -1,5 +1,6 @@
 // Startdata for portalen. Køres automatisk første gang serveren starter,
 // eller med `npm run reset` for at nulstille databasen.
+(function (root) {
 'use strict';
 
 function seed(hashPassword) {
@@ -138,4 +139,6 @@ function seed(hashPassword) {
   return { users, subjects, materials, assignments, submissions, announcements, lessons, messages };
 }
 
-module.exports = { seed };
+if (typeof module !== 'undefined' && module.exports) module.exports = { seed };
+else root.PortalSeed = { seed };
+})(this);

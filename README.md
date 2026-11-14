@@ -23,6 +23,10 @@ En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal*
 - Bedøm afleveringer med karakter + feedback
 - Elevliste og karakterbog pr. fag
 
+## Demo uden installation
+`demo/portal.html` er hele portalen i én fil – dobbeltklik på den, så åbner den i browseren.
+Data gemmes kun i den browser, du bruger. Filen bygges fra koden med `npm run demo`.
+
 ## Kom i gang
 Kræver kun [Node.js](https://nodejs.org) 18 eller nyere – ingen pakker skal installeres.
 
@@ -30,6 +34,7 @@ Kræver kun [Node.js](https://nodejs.org) 18 eller nyere – ingen pakker skal i
 npm start          # starter på http://localhost:3000
 npm run reset      # nulstiller databasen til demodata
 npm test           # kører API-testene
+npm run demo       # bygger demo/portal.html
 ```
 
 Port kan ændres: `PORT=8080 npm start`.
@@ -43,7 +48,9 @@ Port kan ændres: `PORT=8080 npm start`.
 | Elev  | `anna` (Skibsfører), `jonas` (Kystskipper), `freja` (Færgenavigatør) | `elev123` |
 
 ## Teknik
-- `server.js` – Node.js HTTP-server med JSON-API, sessions-cookies og adgangskontrol (elever/lærere ser kun deres egne fag)
+- `api.js` – portalens logik: ruter, adgangskontrol (elever/lærere ser kun deres egne fag), sessioner
+- `server.js` – Node.js HTTP-server omkring `api.js` med JSON-fil som database
+- `build-demo.js` – samler portalen i én HTML-fil, der kører uden server
 - `seed.js` – fag, brugere og demoindhold
 - `public/` – frontend (HTML/CSS/JS uden frameworks)
 - Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
