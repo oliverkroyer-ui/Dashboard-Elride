@@ -10,9 +10,9 @@ function seed(hashPassword) {
     { id: 'u1', username: 'lars', name: 'Lars Holm', role: 'teacher', password: hashPassword('laerer123') },
     { id: 'u2', username: 'mette', name: 'Mette Bruun', role: 'teacher', password: hashPassword('laerer123') },
     { id: 'u6', username: 'peter', name: 'Peter Krogh', role: 'teacher', password: hashPassword('laerer123') },
-    { id: 'u3', username: 'anna', name: 'Anna Jensen', role: 'student', educationId: 'skibsfoerer', className: 'Skibsfører · 2. semester (aug. 2026)', password: hashPassword('elev123') },
-    { id: 'u4', username: 'jonas', name: 'Jonas Madsen', role: 'student', educationId: 'kystskipper', className: 'Kystskipper · hold aug. 2026', password: hashPassword('elev123') },
-    { id: 'u5', username: 'freja', name: 'Freja Nielsen', role: 'student', educationId: 'faergenavigatoer', className: 'Færgenavigatør · hold 2026-27', password: hashPassword('elev123') },
+    { id: 'u3', username: 'anna', name: 'Anna Jensen', role: 'student', className: 'Skibsfører · 2. semester (aug. 2026)', password: hashPassword('elev123') },
+    { id: 'u4', username: 'jonas', name: 'Jonas Madsen', role: 'student', className: 'Kystskipper · hold aug. 2026', password: hashPassword('elev123') },
+    { id: 'u5', username: 'freja', name: 'Freja Nielsen', role: 'student', className: 'Færgenavigatør · hold 2026-27', password: hashPassword('elev123') },
   ];
   const allStudents = ['u3', 'u4', 'u5'];
   const navigators = ['u3', 'u4']; // Skibsfører + Kystskipper

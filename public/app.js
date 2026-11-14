@@ -83,7 +83,7 @@ function updateChrome() {
   const nav = document.getElementById('topnav');
   const current = location.hash || '#/';
   const links = [['#/', 'Forside'], ['#/skema', 'Skema'], ['#/fag', 'Mine fag'], ['#/beskeder', 'Beskeder']];
-  if (!isTeacher()) links.push(['#/karakterer', 'Karakterer'], ['#/uddannelse', 'Min uddannelse']);
+  if (!isTeacher()) links.push(['#/karakterer', 'Karakterer']);
   const badge = h('span.badge', { hidden: !state.unread }, String(state.unread || ''));
   nav.replaceChildren(...links.map(([href, label]) =>
     h('a', { href, class: (current === href || (href !== '#/' && current.startsWith(href))) ? 'active' : '' }, label, href === '#/beskeder' ? badge : null)));
@@ -139,9 +139,7 @@ function viewLogin() {
     form,
     h('div.demo', h('strong', 'Demo-brugere'), h('br'),
       'Elever: anna, jonas, freja – adgangskode ', h('code', 'elev123'), h('br'),
-      'Lærere: lars, mette, peter – adgangskode ', h('code', 'laerer123')),
-    h('p.small.muted.center', 'Marstal Navigationsskole · Ellenet 10, 5960 Marstal · ',
-      h('a', { href: 'https://www.marnav.dk', target: '_blank', rel: 'noopener noreferrer' }, 'marnav.dk ↗')))));
+      'Lærere: lars, mette, peter – adgangskode ', h('code', 'laerer123')))));
   userInput.focus();
 }
 
@@ -172,8 +170,7 @@ async function viewDashboard() {
   const d = await api('GET', '/api/dashboard');
   const hello = h('div.hero',
     h('h1', `Velkommen, ${state.user.name.split(' ')[0]}`),
-    h('p', isTeacher() ? 'Lærerportal – overblik over dine fag, afleveringer og opslag.' : `Elevportal · ${state.user.className || ''}`),
-    !isTeacher() && state.user.educationId && h('p.small', h('a.hero-link', { href: '#/uddannelse' }, `Om din uddannelse: ${state.user.education} →`)));
+    h('p', isTeacher() ? 'Lærerportal – overblik over dine fag, afleveringer og opslag.' : `Elevportal · ${state.user.className || ''}`));
   const todayCard = h('div.card',
     h('div.row', h('h2', `I dag · ${WEEKDAYS[d.today - 1] || ''}`), h('a.small', { href: '#/skema' }, 'Hele ugen →')),
     d.todayLessons.length ? h('ul.list', d.todayLessons.map(lessonItem)) : h('p.empty', d.today > 5 ? 'Weekend – ingen undervisning.' : 'Ingen lektioner i dag.'),
@@ -446,26 +443,6 @@ async function viewMessages(contactId) {
   render(h('div.section-title', h('h1', 'Beskeder')), h('div.msg-layout', list, convo));
 }
 
-// ---------- Min uddannelse (elev) ----------
-async function viewEducation() {
-  loading();
-  const { education: e, contact: c, practical, source } = await api('GET', '/api/my-education');
-  const ext = (href, label) => h('a', { href, target: '_blank', rel: 'noopener noreferrer' }, label);
-  const bullets = (items) => (items && items.length ? h('ul.bullets', items.map((x) => h('li', x))) : null);
-  if (!e) { render(h('div.card', h('h1', 'Min uddannelse'), h('p.empty', 'Du er ikke tilknyttet en uddannelse endnu.'))); return; }
-  render(
-    h('div.hero', h('div.small', e.level), h('h1', e.name), h('p', state.user.className || ''), h('p.small', e.duration)),
-    h('div.grid.two',
-      h('div.card.stack', h('h2', 'Om uddannelsen'), h('p', e.summary),
-        e.outcome.length ? [h('h3', 'Det giver uddannelsen'), bullets(e.outcome)] : null,
-        e.extra.length ? [h('h3', 'Godt at vide'), bullets(e.extra)] : null,
-        h('p', ext(e.url, 'Læs mere på marnav.dk ↗'))),
-      h('div.stack',
-        h('div.card', h('h2', 'Praktisk'), bullets(practical)),
-        h('div.card', h('h2', 'Kontakt skolen'), h('p', c.address, h('br'), c.phone, h('br'), ext(`mailto:${c.email}`, c.email))))),
-    h('p.small.muted', `Kilde: ${source.url} (hentet ${fmtDate(source.fetched)}).`));
-}
-
 // ---------- Router ----------
 async function router() {
   const hash = location.hash || '#/';
@@ -485,7 +462,6 @@ async function router() {
     else if (parts[0] === 'karakterer' && !isTeacher()) await viewGrades();
     else if (parts[0] === 'skema') await viewSchedule();
     else if (parts[0] === 'beskeder') await viewMessages(parts[1]);
-    else if (parts[0] === 'uddannelse' && !isTeacher()) await viewEducation();
     else render(h('div.card', h('h1', 'Siden findes ikke'), h('a', { href: '#/' }, 'Til forsiden')));
   } catch (e) {
     render(h('div.card', h('h2', 'Der opstod en fejl'), h('p.error', e.message), h('a', { href: '#/' }, 'Til forsiden')));

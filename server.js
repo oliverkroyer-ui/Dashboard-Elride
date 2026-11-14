@@ -7,7 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { seed } = require('./seed');
-const school = require('./school');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -61,8 +60,7 @@ function getUser(req) {
   s.expires = Date.now() + SESSION_TTL_MS;
   return db.users.find((u) => u.id === s.userId) || null;
 }
-const educationName = (id) => (school.educations.find((e) => e.id === id) || {}).name || null;
-const publicUser = (u) => u && ({ id: u.id, username: u.username, name: u.name, role: u.role, className: u.className || null, educationId: u.educationId || null, education: educationName(u.educationId) });
+const publicUser = (u) => u && ({ id: u.id, username: u.username, name: u.name, role: u.role, className: u.className || null });
 
 // ---------- Hjælpere ----------
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
@@ -170,13 +168,6 @@ route('POST', '/api/logout', async (req, res) => {
   const m = /(?:^|;\s*)sid=([^;]+)/.exec(req.headers.cookie || '');
   if (m) sessions.delete(m[1]);
   send(res, 200, { ok: true }, { 'Set-Cookie': 'sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
-});
-
-// Elevens egen uddannelse (info fra marnav.dk)
-route('GET', '/api/my-education', async (req, res, { user }) => {
-  requireRole(user);
-  const education = school.educations.find((e) => e.id === user.educationId) || null;
-  send(res, 200, { education, contact: school.contact, practical: school.practical, source: school.source });
 });
 
 route('GET', '/api/me', async (req, res, { user }) => {

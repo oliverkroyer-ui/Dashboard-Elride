@@ -2,8 +2,6 @@
 
 En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal** og en **lærerportal**.
 
-Skolens egen hjemmeside: [marnav.dk](https://www.marnav.dk) – portalen er det interne værktøj til undervisningen.
-
 ## Fag
 - Skibsfører / Kystskipper: Navigation · Skibsteknik · Søret · Stabilitet & lastbehandling · Sikkerhed & beredskab · Meteorologi & oceanografi · Maritim engelsk
 - Færgenavigatør: Navigation · Sikkerhed & beredskab · Sømandskab · El-drift · Kommunikation, service & turisme
@@ -13,7 +11,6 @@ Skolens egen hjemmeside: [marnav.dk](https://www.marnav.dk) – portalen er det 
 - Forside med dagens skema, kommende afleveringer, seneste opslag og ulæste beskeder
 - Ugeskema
 - Beskeder til egne lærere
-- *Min uddannelse*: info om egen uddannelse (fra marnav.dk)
 - Læs undervisningsmaterialer
 - Aflever opgaver (kan rettes indtil de er bedømt)
 - Se karakterer (7-trinsskalaen), feedback og gennemsnit
@@ -48,7 +45,6 @@ Port kan ændres: `PORT=8080 npm start`.
 ## Teknik
 - `server.js` – Node.js HTTP-server med JSON-API, sessions-cookies og adgangskontrol (elever/lærere ser kun deres egne fag)
 - `seed.js` – fag, brugere og demoindhold
-- `school.js` – kontaktinfo og uddannelsesbeskrivelser fra marnav.dk
 - `public/` – frontend (HTML/CSS/JS uden frameworks)
 - Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
 

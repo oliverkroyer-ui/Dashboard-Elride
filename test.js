@@ -29,10 +29,6 @@ const { createServer, loadDb } = require('./server');
     const dash = (await call('GET', '/api/dashboard', null, anna)).data;
     assert.ok(['Navigation', 'Skibsteknik', 'Søret'].every((n) => dash.subjects.some((s) => s.name === n)), 'eleven ser kernefagene');
 
-    // Uddannelsesinfo kræver login og viser elevens egen uddannelse
-    assert.strictEqual((await call('GET', '/api/my-education')).status, 401);
-    assert.strictEqual((await call('GET', '/api/my-education', null, anna)).data.education.id, 'skibsfoerer');
-
     // Skema: lærer tilføjer lektion i eget fag, eleven ser den
     assert.strictEqual((await call('POST', '/api/subjects/s-nav/lessons', { weekday: 3, start: '14:00', end: '13:00' }, lars)).status, 400);
     const les = (await call('POST', '/api/subjects/s-nav/lessons', { weekday: 3, start: '14:00', end: '15:30', room: 'Simulator' }, lars)).data;
