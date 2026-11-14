@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marstal Navigationsskole – Portal</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar" id="topbar" hidden>
+    <a class="brand" href="#/">
+      <img src="/favicon.svg" alt="" width="28" height="28">
+      <span>Marstal Navigationsskole</span>
+    </a>
+    <nav class="topnav" id="topnav"></nav>
+    <div class="userbox">
+      <span class="role-badge" id="roleBadge"></span>
+      <span id="userName"></span>
+      <button class="btn ghost small" id="logoutBtn" type="button">Log ud</button>
+    </div>
+  </header>
+  <main id="app" class="container" aria-live="polite"></main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>
