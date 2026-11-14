@@ -9,11 +9,14 @@ function seed(hashPassword) {
   const users = [
     { id: 'u1', username: 'lars', name: 'Lars Holm', role: 'teacher', password: hashPassword('laerer123') },
     { id: 'u2', username: 'mette', name: 'Mette Bruun', role: 'teacher', password: hashPassword('laerer123') },
-    { id: 'u3', username: 'anna', name: 'Anna Jensen', role: 'student', className: 'Skibsfører 2026A', password: hashPassword('elev123') },
-    { id: 'u4', username: 'jonas', name: 'Jonas Madsen', role: 'student', className: 'Skibsfører 2026A', password: hashPassword('elev123') },
-    { id: 'u5', username: 'freja', name: 'Freja Nielsen', role: 'student', className: 'Skibsfører 2026A', password: hashPassword('elev123') },
+    { id: 'u6', username: 'peter', name: 'Peter Krogh', role: 'teacher', password: hashPassword('laerer123') },
+    { id: 'u3', username: 'anna', name: 'Anna Jensen', role: 'student', educationId: 'skibsfoerer', className: 'Skibsfører · 2. semester (aug. 2026)', password: hashPassword('elev123') },
+    { id: 'u4', username: 'jonas', name: 'Jonas Madsen', role: 'student', educationId: 'kystskipper', className: 'Kystskipper · hold aug. 2026', password: hashPassword('elev123') },
+    { id: 'u5', username: 'freja', name: 'Freja Nielsen', role: 'student', educationId: 'faergenavigatoer', className: 'Færgenavigatør · hold 2026-27', password: hashPassword('elev123') },
   ];
   const allStudents = ['u3', 'u4', 'u5'];
+  const navigators = ['u3', 'u4']; // Skibsfører + Kystskipper
+  const ferry = ['u5'];            // Færgenavigatør
 
   const subjects = [
     {
@@ -24,17 +27,17 @@ function seed(hashPassword) {
     {
       id: 's-tek', code: 'TEK', name: 'Skibsteknik', color: '#a2552a',
       description: 'Skibets konstruktion, maskineri, hjælpesystemer, materialer og vedligehold.',
-      teacherIds: ['u2'], studentIds: allStudents,
+      teacherIds: ['u2'], studentIds: navigators,
     },
     {
       id: 's-ret', code: 'RET', name: 'Søret', color: '#5b3f8c',
       description: 'Sølov, søvejsregler (COLREG), internationale konventioner (SOLAS, MARPOL, STCW) og ansvar til søs.',
-      teacherIds: ['u1'], studentIds: allStudents,
+      teacherIds: ['u1'], studentIds: navigators,
     },
     {
       id: 's-stab', code: 'STAB', name: 'Stabilitet & lastbehandling', color: '#2a7f62',
       description: 'Tyngdepunkt, metacenter, GZ-kurver, trim, lastplanlægning og surring.',
-      teacherIds: ['u2'], studentIds: allStudents,
+      teacherIds: ['u2'], studentIds: navigators,
     },
     {
       id: 's-sik', code: 'SIK', name: 'Sikkerhed & beredskab', color: '#b23a48',
@@ -44,12 +47,27 @@ function seed(hashPassword) {
     {
       id: 's-met', code: 'MET', name: 'Meteorologi & oceanografi', color: '#3b7ea1',
       description: 'Vejrsystemer, vejrkort, vind og bølger, strøm og planlægning efter vejret.',
-      teacherIds: ['u1'], studentIds: allStudents,
+      teacherIds: ['u1'], studentIds: navigators,
     },
     {
       id: 's-eng', code: 'ENG', name: 'Maritim engelsk', color: '#6b6b2a',
       description: 'SMCP (Standard Marine Communication Phrases), VHF-kommunikation og fagterminologi.',
-      teacherIds: ['u1'], studentIds: allStudents,
+      teacherIds: ['u1'], studentIds: navigators,
+    },
+    {
+      id: 's-som', code: 'SØM', name: 'Sømandskab', color: '#1d6f7a',
+      description: 'Fortøjning, ankring, knob og splejsninger, dæksarbejde og godt sømandskab om bord på færger.',
+      teacherIds: ['u6'], studentIds: ferry,
+    },
+    {
+      id: 's-el', code: 'EL', name: 'El-drift', color: '#c08a1e',
+      description: 'Elektriske systemer om bord, batteri-eldrift i færger, ladeanlæg og sikker betjening.',
+      teacherIds: ['u6'], studentIds: ferry,
+    },
+    {
+      id: 's-kst', code: 'KST', name: 'Kommunikation, service & turisme', color: '#8a4f7d',
+      description: 'Passagerservice, kommunikation med gæster og myndigheder, formidling og turisme i øsamfund.',
+      teacherIds: ['u6'], studentIds: ferry,
     },
   ];
 
@@ -63,12 +81,21 @@ function seed(hashPassword) {
     { id: 'm7', subjectId: 's-eng', title: 'SMCP – Distress, urgency & safety', content: 'Øv MAYDAY-, PAN PAN- og SECURITE-meldinger højt i par.', link: '', createdAt: days(-4), authorId: 'u1' },
   ];
 
+  materials.push(
+    { id: 'm8', subjectId: 's-el', title: 'Batteri-eldrift i færger – introduktion', content: 'Opbygning af batterisystemer, BMS, ladestrategi i havn og nødprocedurer ved termisk løbskhed.', link: '', createdAt: days(-5), authorId: 'u6' },
+    { id: 'm9', subjectId: 's-som', title: 'Fortøjning af små færger', content: 'Gennemgang af fortøjningsplan, snapback-zoner og kommunikation mellem bro og dæk.', link: '', createdAt: days(-9), authorId: 'u6' },
+  );
+
   const assignments = [
     { id: 'a1', subjectId: 's-nav', title: 'Strømtrekant – opgave 1-5', description: 'Løs opgave 1-5 i kompendiet. Vis beregninger og vedhæft eventuelt et billede af din konstruktion (indsæt link).', due: days(5), createdAt: days(-7), authorId: 'u1' },
     { id: 'a2', subjectId: 's-ret', title: 'Case: Kollision i Storebælt', description: 'Analysér casen ud fra COLREG regel 5, 7, 8 og 15. Hvem havde vigepligten, og hvad burde være gjort anderledes?', due: days(9), createdAt: days(-3), authorId: 'u1' },
     { id: 'a3', subjectId: 's-tek', title: 'Brændstofsystemet', description: 'Tegn og beskriv brændstofsystemet fra bunkertank til indsprøjtningsventil.', due: days(-2), createdAt: days(-14), authorId: 'u2' },
     { id: 'a4', subjectId: 's-stab', title: 'GM-beregning efter lastning', description: 'Beregn ny KG og GM efter lastning af de tre partier i bilaget.', due: days(12), createdAt: days(-1), authorId: 'u2' },
   ];
+
+  assignments.push(
+    { id: 'a5', subjectId: 's-kst', title: 'Serviceplan for en ø-overfart', description: 'Beskriv hvordan du vil modtage og informere passagerer på en travl sommerdag – herunder sikkerhedsinformation og handicapvenlig service.', due: days(7), createdAt: days(-2), authorId: 'u6' },
+  );
 
   const submissions = [
     { id: 'sub1', assignmentId: 'a3', studentId: 'u3', text: 'Brændstoffet pumpes fra bunkertanken til bundfældningstanken, derefter separatoren og dagtanken ...', submittedAt: days(-3), grade: '10', feedback: 'Flot og grundig beskrivelse. Husk viskositetsregulatoren.', gradedAt: days(-1) },
@@ -79,6 +106,7 @@ function seed(hashPassword) {
   const announcements = [
     { id: 'n1', subjectId: 's-nav', title: 'Simulatortimer i uge 48', body: 'Vi bruger broens simulator tirsdag og torsdag. Mød op kl. 08:15 i simulatorbygningen.', createdAt: days(-2), authorId: 'u1' },
     { id: 'n2', subjectId: 's-sik', title: 'Brandkursus på Svendborg', body: 'Husk arbejdstøj og sikkerhedssko til den praktiske brandøvelse fredag.', createdAt: days(-1), authorId: 'u2' },
+    { id: 'n3', subjectId: 's-el', title: 'Praktik på færgen', body: 'Husk at notere alle ladeoperationer i jeres praktikbog – vi gennemgår dem ved næste skoleperiode.', createdAt: days(-1), authorId: 'u6' },
   ];
 
   return { users, subjects, materials, assignments, submissions, announcements };

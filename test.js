@@ -29,6 +29,16 @@ const { createServer, loadDb } = require('./server');
     const dash = (await call('GET', '/api/dashboard', null, anna)).data;
     assert.ok(['Navigation', 'Skibsteknik', 'Søret'].every((n) => dash.subjects.some((s) => s.name === n)), 'eleven ser kernefagene');
 
+    // Skoleinfo fra marnav.dk er offentlig
+    const sc = (await call('GET', '/api/school')).data;
+    assert.ok(sc.educations.some((e) => e.id === 'skibsfoerer') && sc.contact.address.includes('Marstal'));
+
+    // Færgenavigatør-elev har færgefagene, men ikke Søret
+    const freja = await login('freja', 'elev123');
+    const fd = (await call('GET', '/api/dashboard', null, freja)).data;
+    assert.ok(fd.subjects.some((s) => s.name === 'El-drift') && !fd.subjects.some((s) => s.name === 'Søret'));
+    assert.strictEqual((await call('GET', '/api/subjects/s-ret', null, freja)).status, 403);
+
     // Elev må ikke oprette materialer
     assert.strictEqual((await call('POST', '/api/subjects/s-nav/materials', { title: 'x' }, anna)).status, 403);
     // Lærer kun i egne fag

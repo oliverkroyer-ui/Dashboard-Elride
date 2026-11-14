@@ -2,8 +2,17 @@
 
 En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal** og en **lærerportal**.
 
+## Skolen
+Ellenet 10, 5960 Marstal · +45 62 53 10 75 · marnav@marnav.dk · [marnav.dk](https://www.marnav.dk)
+
+Siden **Skolen & uddannelser** (også tilgængelig uden login) viser oplysninger hentet fra marnav.dk:
+uddannelserne (HF-Søfart, Kystskipper, Kystskipper online, Færgenavigatør, Sætteskipper, Skibsfører,
+Aspirant, Læs mens du sejler, Generhvervelse) med optagelseskrav og beviser, åbent hus, kursuskatalog
+med datoer og priser samt praktisk info. Data ligger i `school.js` og opdateres der.
+
 ## Fag
-Navigation · Skibsteknik · Søret · Stabilitet & lastbehandling · Sikkerhed & beredskab · Meteorologi & oceanografi · Maritim engelsk
+- Skibsfører / Kystskipper: Navigation · Skibsteknik · Søret · Stabilitet & lastbehandling · Sikkerhed & beredskab · Meteorologi & oceanografi · Maritim engelsk
+- Færgenavigatør: Navigation · Sikkerhed & beredskab · Sømandskab · El-drift · Kommunikation, service & turisme
 
 ## Funktioner
 **Elever**
@@ -34,11 +43,13 @@ Port kan ændres: `PORT=8080 npm start`.
 |-------|-----------|-------------|
 | Lærer | `lars` (Navigation, Søret, Meteorologi, Maritim engelsk) | `laerer123` |
 | Lærer | `mette` (Skibsteknik, Stabilitet, Sikkerhed) | `laerer123` |
-| Elev  | `anna`, `jonas`, `freja` | `elev123` |
+| Lærer | `peter` (Sømandskab, El-drift, Kommunikation/service/turisme) | `laerer123` |
+| Elev  | `anna` (Skibsfører), `jonas` (Kystskipper), `freja` (Færgenavigatør) | `elev123` |
 
 ## Teknik
 - `server.js` – Node.js HTTP-server med JSON-API, sessions-cookies og adgangskontrol (elever/lærere ser kun deres egne fag)
 - `seed.js` – fag, brugere og demoindhold
+- `school.js` – skoleinfo, uddannelser og kurser fra marnav.dk
 - `public/` – frontend (HTML/CSS/JS uden frameworks)
 - Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
 

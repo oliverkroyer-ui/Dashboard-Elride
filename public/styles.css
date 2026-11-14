@@ -138,3 +138,18 @@ td.grade { font-weight: 700; text-align: center; }
 [hidden] { display: none !important; }
 label { align-content: start; }
 .card > h2:not(:first-child) { margin-top: 1.25rem; }
+.center { text-align: center; }
+.hero a, .hero-link { color: #fff; }
+.hero .contact { margin-top: .5rem; }
+.hero-actions { margin-top: .9rem; }
+.hero-actions a { color: var(--navy); background: var(--gold); padding: .4rem .9rem; border-radius: 7px; font-weight: 600; text-decoration: none; }
+details.edu > summary { cursor: pointer; list-style: none; }
+details.edu > summary::-webkit-details-marker { display: none; }
+details.edu > summary h3 { margin: .1rem 0; }
+details.edu > summary::after { content: 'Vis detaljer ▾'; display: block; margin-top: .5rem; font-size: .82rem; color: var(--navy-2); font-weight: 600; }
+details.edu[open] > summary::after { content: 'Skjul ▴'; }
+details.edu[open] { grid-column: 1 / -1; }
+details.edu h4 { margin: .8rem 0 .3rem; font-size: .9rem; }
+.bullets { margin: 0; padding-left: 1.2rem; }
+.bullets li { margin: .2rem 0; }
+.spaced { margin-top: 1.5rem; }
