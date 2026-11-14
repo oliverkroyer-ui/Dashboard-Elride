@@ -109,7 +109,33 @@ function seed(hashPassword) {
     { id: 'n3', subjectId: 's-el', title: 'Praktik på færgen', body: 'Husk at notere alle ladeoperationer i jeres praktikbog – vi gennemgår dem ved næste skoleperiode.', createdAt: days(-1), authorId: 'u6' },
   ];
 
-  return { users, subjects, materials, assignments, submissions, announcements };
+  // Ugeskema (1 = mandag … 5 = fredag)
+  const L = (id, subjectId, weekday, start, end, room, teacherId) => ({ id, subjectId, weekday, start, end, room, teacherId });
+  const lessons = [
+    L('l1', 's-nav', 1, '08:15', '09:45', 'Navigationslokalet', 'u1'),
+    L('l2', 's-ret', 1, '10:00', '11:30', 'Lokale 2', 'u1'),
+    L('l3', 's-tek', 1, '12:15', '13:45', 'Maskinværkstedet', 'u2'),
+    L('l4', 's-stab', 2, '08:15', '09:45', 'Lokale 3', 'u2'),
+    L('l5', 's-nav', 2, '10:00', '13:45', 'Simulatorbygningen', 'u1'),
+    L('l6', 's-met', 3, '08:15', '09:45', 'Lokale 2', 'u1'),
+    L('l7', 's-sik', 3, '10:00', '11:30', 'Lokale 1', 'u2'),
+    L('l8', 's-eng', 3, '12:15', '13:45', 'Lokale 4', 'u1'),
+    L('l9', 's-tek', 4, '08:15', '09:45', 'Maskinværkstedet', 'u2'),
+    L('l10', 's-ret', 4, '10:00', '11:30', 'Lokale 2', 'u1'),
+    L('l11', 's-nav', 5, '08:15', '11:30', 'Simulatorbygningen', 'u1'),
+    L('l12', 's-som', 1, '08:15', '11:30', 'Havnen / øvelsesbåd', 'u6'),
+    L('l13', 's-el', 2, '08:15', '11:30', 'El-laboratoriet', 'u6'),
+    L('l14', 's-kst', 4, '12:15', '13:45', 'Lokale 4', 'u6'),
+    L('l15', 's-sik', 5, '12:15', '14:30', 'Lokale 1', 'u2'),
+  ];
+
+  const messages = [
+    { id: 'msg1', fromId: 'u3', toId: 'u1', body: 'Hej Lars – må jeg aflevere strømtrekant-opgaven som foto af min konstruktion?', createdAt: days(-1), read: true },
+    { id: 'msg2', fromId: 'u1', toId: 'u3', body: 'Ja, det er helt fint. Indsæt linket i besvarelsen og skriv dine beregninger med.', createdAt: days(-0.9), read: false },
+    { id: 'msg3', fromId: 'u4', toId: 'u2', body: 'Jeg var syg i fredags – er der noter fra timen om brændstofsystemet?', createdAt: days(-0.5), read: false },
+  ];
+
+  return { users, subjects, materials, assignments, submissions, announcements, lessons, messages };
 }
 
 module.exports = { seed };

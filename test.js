@@ -29,9 +29,23 @@ const { createServer, loadDb } = require('./server');
     const dash = (await call('GET', '/api/dashboard', null, anna)).data;
     assert.ok(['Navigation', 'Skibsteknik', 'Søret'].every((n) => dash.subjects.some((s) => s.name === n)), 'eleven ser kernefagene');
 
-    // Skoleinfo fra marnav.dk er offentlig
-    const sc = (await call('GET', '/api/school')).data;
-    assert.ok(sc.educations.some((e) => e.id === 'skibsfoerer') && sc.contact.address.includes('Marstal'));
+    // Uddannelsesinfo kræver login og viser elevens egen uddannelse
+    assert.strictEqual((await call('GET', '/api/my-education')).status, 401);
+    assert.strictEqual((await call('GET', '/api/my-education', null, anna)).data.education.id, 'skibsfoerer');
+
+    // Skema: lærer tilføjer lektion i eget fag, eleven ser den
+    assert.strictEqual((await call('POST', '/api/subjects/s-nav/lessons', { weekday: 3, start: '14:00', end: '13:00' }, lars)).status, 400);
+    const les = (await call('POST', '/api/subjects/s-nav/lessons', { weekday: 3, start: '14:00', end: '15:30', room: 'Simulator' }, lars)).data;
+    assert.ok((await call('GET', '/api/schedule', null, anna)).data.lessons.some((l) => l.id === les.id));
+    assert.strictEqual((await call('POST', '/api/subjects/s-tek/lessons', { weekday: 1, start: '08:00', end: '09:00' }, lars)).status, 403);
+
+    // Beskeder: kun mellem elev og lærer med fælles fag
+    assert.strictEqual((await call('POST', '/api/messages', { toId: 'u4', body: 'hej' }, anna)).status, 403, 'elev → elev ikke tilladt');
+    assert.strictEqual((await call('POST', '/api/messages', { toId: 'u1', body: 'Hej Lars' }, anna)).status, 201);
+    const lt = (await call('GET', '/api/messages', null, lars)).data.threads.find((t) => t.contact.username === 'anna');
+    assert.ok(lt.unread >= 1 && lt.messages.some((m) => m.body === 'Hej Lars'));
+    await call('POST', '/api/messages/read/u3', null, lars);
+    assert.strictEqual((await call('GET', '/api/messages', null, lars)).data.threads.find((t) => t.contact.username === 'anna').unread, 0);
 
     // Færgenavigatør-elev har færgefagene, men ikke Søret
     const freja = await login('freja', 'elev123');

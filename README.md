@@ -2,13 +2,7 @@
 
 En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal** og en **lærerportal**.
 
-## Skolen
-Ellenet 10, 5960 Marstal · +45 62 53 10 75 · marnav@marnav.dk · [marnav.dk](https://www.marnav.dk)
-
-Siden **Skolen & uddannelser** (også tilgængelig uden login) viser oplysninger hentet fra marnav.dk:
-uddannelserne (HF-Søfart, Kystskipper, Kystskipper online, Færgenavigatør, Sætteskipper, Skibsfører,
-Aspirant, Læs mens du sejler, Generhvervelse) med optagelseskrav og beviser, åbent hus, kursuskatalog
-med datoer og priser samt praktisk info. Data ligger i `school.js` og opdateres der.
+Skolens egen hjemmeside: [marnav.dk](https://www.marnav.dk) – portalen er det interne værktøj til undervisningen.
 
 ## Fag
 - Skibsfører / Kystskipper: Navigation · Skibsteknik · Søret · Stabilitet & lastbehandling · Sikkerhed & beredskab · Meteorologi & oceanografi · Maritim engelsk
@@ -16,13 +10,18 @@ med datoer og priser samt praktisk info. Data ligger i `school.js` og opdateres 
 
 ## Funktioner
 **Elever**
-- Overblik over egne fag, kommende afleveringer og seneste opslag
+- Forside med dagens skema, kommende afleveringer, seneste opslag og ulæste beskeder
+- Ugeskema
+- Beskeder til egne lærere
+- *Min uddannelse*: info om egen uddannelse (fra marnav.dk)
 - Læs undervisningsmaterialer
 - Aflever opgaver (kan rettes indtil de er bedømt)
 - Se karakterer (7-trinsskalaen), feedback og gennemsnit
 
 **Lærere**
-- Overblik over afleveringer der venter på bedømmelse
+- Forside med dagens lektioner og afleveringer der venter på bedømmelse
+- Ugeskema – lektioner tilføjes/fjernes under fanen *Skema* i hvert fag
+- Beskeder med elever i egne fag
 - Opret opslag, materialer (med links) og opgaver med frist i egne fag
 - Bedøm afleveringer med karakter + feedback
 - Elevliste og karakterbog pr. fag
@@ -49,7 +48,7 @@ Port kan ændres: `PORT=8080 npm start`.
 ## Teknik
 - `server.js` – Node.js HTTP-server med JSON-API, sessions-cookies og adgangskontrol (elever/lærere ser kun deres egne fag)
 - `seed.js` – fag, brugere og demoindhold
-- `school.js` – skoleinfo, uddannelser og kurser fra marnav.dk
+- `school.js` – kontaktinfo og uddannelsesbeskrivelser fra marnav.dk
 - `public/` – frontend (HTML/CSS/JS uden frameworks)
 - Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
 

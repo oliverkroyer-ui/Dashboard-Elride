@@ -141,15 +141,25 @@ label { align-content: start; }
 .center { text-align: center; }
 .hero a, .hero-link { color: #fff; }
 .hero .contact { margin-top: .5rem; }
-.hero-actions { margin-top: .9rem; }
-.hero-actions a { color: var(--navy); background: var(--gold); padding: .4rem .9rem; border-radius: 7px; font-weight: 600; text-decoration: none; }
-details.edu > summary { cursor: pointer; list-style: none; }
-details.edu > summary::-webkit-details-marker { display: none; }
-details.edu > summary h3 { margin: .1rem 0; }
-details.edu > summary::after { content: 'Vis detaljer ▾'; display: block; margin-top: .5rem; font-size: .82rem; color: var(--navy-2); font-weight: 600; }
-details.edu[open] > summary::after { content: 'Skjul ▴'; }
-details.edu[open] { grid-column: 1 / -1; }
-details.edu h4 { margin: .8rem 0 .3rem; font-size: .9rem; }
 .bullets { margin: 0; padding-left: 1.2rem; }
 .bullets li { margin: .2rem 0; }
 .spaced { margin-top: 1.5rem; }
+
+.badge { display: inline-block; min-width: 1.3em; margin-left: .35rem; padding: 0 .4rem; border-radius: 99px; background: var(--gold); color: var(--navy); font-size: .75rem; font-weight: 800; text-align: center; }
+.grid.three { display: grid; gap: .7rem; grid-template-columns: repeat(3, 1fr); }
+.lesson { border-left: 4px solid var(--accent); padding-left: .7rem !important; margin: .4rem 0; border-bottom: 0 !important; }
+.week { display: grid; gap: .8rem; grid-template-columns: repeat(5, 1fr); }
+.week .day.today { outline: 2px solid var(--gold); }
+.week .day h3 { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 900px) { .week { grid-template-columns: 1fr; } .grid.three { grid-template-columns: 1fr; } }
+.msg-layout { display: grid; gap: 1rem; grid-template-columns: 300px 1fr; align-items: start; }
+@media (max-width: 800px) { .msg-layout { grid-template-columns: 1fr; } }
+.threads li { padding: 0; }
+.threads li.selected { background: #eaf1f8; border-radius: 7px; }
+.thread { display: block; padding: .6rem .5rem; color: inherit; text-decoration: none; }
+.convo { display: grid; gap: .8rem; }
+.messages { display: flex; flex-direction: column; gap: .5rem; max-height: 55vh; overflow-y: auto; padding: .5rem; background: #f6f8fa; border-radius: 8px; }
+.msg { max-width: 75%; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .5rem .75rem; align-self: flex-start; }
+.msg.mine { align-self: flex-end; background: var(--navy-2); color: #fff; border-color: var(--navy-2); }
+.msg .meta { opacity: .7; margin-top: .2rem; }
+.compose textarea { min-height: 70px; }

@@ -35,6 +35,8 @@ let db;
 function loadDb(reset = false) {
   if (!reset && fs.existsSync(DB_FILE)) {
     db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    db.lessons = db.lessons || [];
+    db.messages = db.messages || [];
   } else {
     db = seed(hashPassword);
     saveDb();
@@ -170,8 +172,12 @@ route('POST', '/api/logout', async (req, res) => {
   send(res, 200, { ok: true }, { 'Set-Cookie': 'sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
 });
 
-// Offentlig: skoleinfo, uddannelser og kurser (fra marnav.dk)
-route('GET', '/api/school', async (req, res) => send(res, 200, school));
+// Elevens egen uddannelse (info fra marnav.dk)
+route('GET', '/api/my-education', async (req, res, { user }) => {
+  requireRole(user);
+  const education = school.educations.find((e) => e.id === user.educationId) || null;
+  send(res, 200, { education, contact: school.contact, practical: school.practical, source: school.source });
+});
 
 route('GET', '/api/me', async (req, res, { user }) => {
   requireRole(user);
@@ -186,7 +192,12 @@ route('GET', '/api/dashboard', async (req, res, { user }) => {
   const announcements = db.announcements.filter((n) => subjectIds.has(n.subjectId)).sort(byDateDesc('createdAt')).slice(0, 5)
     .map((n) => ({ ...n, subjectName: subjectName(n.subjectId), author: nameOf(n.authorId) }));
   const assignments = db.assignments.filter((a) => subjectIds.has(a.subjectId));
-  const out = { subjects: subs.map((s) => subjectSummary(s, user)), announcements };
+  const today = ((new Date().getDay() + 6) % 7) + 1; // 1 = mandag … 7 = søndag
+  const out = {
+    subjects: subs.map((s) => subjectSummary(s, user)), announcements,
+    today, todayLessons: lessonsFor(user).filter((l) => l.weekday === today),
+    unreadMessages: db.messages.filter((m) => m.toId === user.id && !m.read).length,
+  };
 
   if (user.role === 'student') {
     const mine = db.submissions.filter((x) => x.studentId === user.id);
@@ -323,6 +334,79 @@ route('GET', '/api/subjects/:id/gradebook', async (req, res, { user, params }) =
     }),
   }));
   send(res, 200, { subject: { id: s.id, name: s.name }, assignments: assignments.map((a) => ({ id: a.id, title: a.title, due: a.due })), rows });
+});
+
+// ---------- Skema ----------
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+function lessonsFor(user) {
+  const subs = mySubjects(user);
+  return db.lessons.filter((l) => subs.some((s) => s.id === l.subjectId))
+    .map((l) => {
+      const s = subs.find((x) => x.id === l.subjectId);
+      return { ...l, subjectName: s.name, subjectCode: s.code, color: s.color, teacher: nameOf(l.teacherId) };
+    })
+    .sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start));
+}
+route('GET', '/api/schedule', async (req, res, { user }) => {
+  requireRole(user);
+  send(res, 200, { lessons: lessonsFor(user) });
+});
+route('POST', '/api/subjects/:id/lessons', async (req, res, { user, params, body }) => {
+  requireRole(user, 'teacher');
+  const s = subjectFor(user, params.id);
+  const weekday = Number(body.weekday);
+  if (!(weekday >= 1 && weekday <= 5)) throw new HttpError(400, 'Vælg en ugedag (mandag–fredag)');
+  const start = str(body.start, 'starttid', { max: 5 }), end = str(body.end, 'sluttid', { max: 5 });
+  if (!TIME_RE.test(start) || !TIME_RE.test(end) || end <= start) throw new HttpError(400, 'Ugyldigt tidsrum');
+  const l = { id: newId('l'), subjectId: s.id, weekday, start, end, room: str(body.room, 'lokale', { max: 80, required: false }), teacherId: user.id };
+  db.lessons.push(l); saveDb();
+  send(res, 201, l);
+});
+route('DELETE', '/api/lessons/:id', async (req, res, { user, params }) => {
+  requireRole(user, 'teacher');
+  const l = db.lessons.find((x) => x.id === params.id);
+  if (!l) throw new HttpError(404, 'Lektionen findes ikke');
+  subjectFor(user, l.subjectId);
+  db.lessons = db.lessons.filter((x) => x.id !== l.id); saveDb();
+  send(res, 200, { ok: true });
+});
+
+// ---------- Beskeder (elev ↔ lærer i fælles fag) ----------
+function contactsOf(user) {
+  const ids = new Set();
+  for (const s of mySubjects(user)) (user.role === 'teacher' ? s.studentIds : s.teacherIds).forEach((id) => ids.add(id));
+  ids.delete(user.id);
+  return [...ids].map((id) => db.users.find((u) => u.id === id)).filter(Boolean);
+}
+route('GET', '/api/messages', async (req, res, { user }) => {
+  requireRole(user);
+  const threads = contactsOf(user).map((c) => {
+    const msgs = db.messages.filter((m) => (m.fromId === user.id && m.toId === c.id) || (m.fromId === c.id && m.toId === user.id))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return {
+      contact: publicUser(c),
+      subjects: mySubjects(user).filter((s) => [...s.teacherIds, ...s.studentIds].includes(c.id)).map((s) => s.name),
+      unread: msgs.filter((m) => m.toId === user.id && !m.read).length,
+      last: msgs[msgs.length - 1] || null,
+      messages: msgs.map((m) => ({ ...m, mine: m.fromId === user.id })),
+    };
+  }).sort((a, b) => (b.last ? b.last.createdAt : '').localeCompare(a.last ? a.last.createdAt : '') || a.contact.name.localeCompare(b.contact.name));
+  send(res, 200, { threads });
+});
+route('POST', '/api/messages', async (req, res, { user, body }) => {
+  requireRole(user);
+  const to = contactsOf(user).find((c) => c.id === body.toId);
+  if (!to) throw new HttpError(403, 'Du kan kun skrive til dine lærere/elever');
+  const m = { id: newId('msg'), fromId: user.id, toId: to.id, body: str(body.body, 'besked', { max: 5000 }), createdAt: new Date().toISOString(), read: false };
+  db.messages.push(m); saveDb();
+  send(res, 201, m);
+});
+route('POST', '/api/messages/read/:contactId', async (req, res, { user, params }) => {
+  requireRole(user);
+  let n = 0;
+  for (const m of db.messages) if (m.toId === user.id && m.fromId === params.contactId && !m.read) { m.read = true; n++; }
+  if (n) saveDb();
+  send(res, 200, { ok: true, marked: n });
 });
 
 // ---------- Statiske filer ----------
