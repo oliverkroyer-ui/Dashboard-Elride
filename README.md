@@ -1,77 +1,71 @@
-# ⚓ Marstal Navigationsskole – Portal
+# ⚓ Marstal Navigationsskole – intelligent undervisningsportal
 
-En lokal webportal (localhost) for Marstal Navigationsskole med en **elevportal** og en **lærerportal**.
+Et forfattersystem og en elevportal til maritim undervisning (søret, navigation, skibsteknik).
+Målet: **én ændring og én godkendelse** i stedet for timers rettelser i PDF-dokumenter.
 
-## Fag
-- Skibsfører / Kystskipper: Navigation · Skibsteknik · Søret · Stabilitet & lastbehandling · Sikkerhed & beredskab · Meteorologi & oceanografi · Maritim engelsk
-- Færgenavigatør: Navigation · Sikkerhed & beredskab · Sømandskab · El-drift · Kommunikation, service & turisme
+📄 **Konceptanalyse, arkitektur, udviklingsplan og forretningsmodel:** [docs/KONCEPTANALYSE.md](docs/KONCEPTANALYSE.md)
 
-## Funktioner
-**Lærebøger** – lærerne skriver og vedligeholder selv bøgerne
-- Bøger med kapitler skrevet i markdown (overskrifter, lister, tabeller, formler, billeder, links)
-- Editor med værktøjslinje og live forhåndsvisning (Skriv / Forhåndsvis på mobil)
-- Kladde eller udgivet for både bog og kapitel – eleverne ser kun det udgivne
-- Versionshistorik på hvert kapitel: se og gendan tidligere versioner
-- Eleverne markerer kapitler som læst og ser deres fremgang
+## Hvad kan prototypen?
 
-**Lærerstudio** – lærerens værksted
-- Overblik: lærebøger, kapitler, kladder, ord skrevet, materialer, opgaver og lektioner
-- Hvor mange elever der er færdige med hver bog
-- Redigér fag (navn, kode, farve og beskrivelse)
-- Ændringslog over alt, der er oprettet og redigeret
+**Underviseren**
+- **Undervisningsbøger** med kapitler og underkapitler – editor med live forhåndsvisning
+- **Centrale oplysninger** (`{{fakta:…}}`): ret et tal ét sted – opdateres i alle kapitler
+- **Formelbibliotek** (`{{formel:…}}`): formler med variabler, enheder, kontroleksempel og advarsler – vises som interaktive beregnere
+- **Retskilder** (`{{kilde:…}}`): bestemmelser med ordlyd og gyldighedsdato
+- **Lovændringer:** overvågning, automatisk fund af berørt materiale, konkrete forslag, godkendelse ét forslag ad gangen, dokumentation med kilde og dato. AI ændrer aldrig noget selv.
+- **Udgivelse:** arbejdskopi → “Udgiv ny version” (hele bogen eller ét kapitel) → eleverne får besked og kan se præcis hvad der er ændret. Alle udgaver bevares.
+- **Versionshistorik** på hvert kapitel med sammenligning og gendannelse
+- **Import** af PDF, Word og tekst (opdeles automatisk i kapitler) og **eksport til PDF**
+- **Assistent:** find alle steder, kontrollér formler, vis ændringer siden sidste udgave, lav regneopgaver med facit, forklar enklere (Claude), frie spørgsmål (Claude)
+- **Administration:** brugere, elevgrupper, fag og produkter (forberedt til salg)
 
-**Som app**
-- Bundmenu med ikoner på mobil og en tilpasset topmenu på computer
-- Kan installeres på telefonen ("Føj til hjemmeskærm"), når portalen køres fra serveren
-
-**Elever**
-- Forside med dagens skema, kommende afleveringer, seneste opslag og ulæste beskeder
-- Ugeskema
-- Beskeder til egne lærere
-- Læs undervisningsmaterialer
-- Aflever opgaver (kan rettes indtil de er bedømt)
-- Se karakterer (7-trinsskalaen), feedback og gennemsnit
-
-**Lærere**
-- Forside med dagens lektioner og afleveringer der venter på bedømmelse
-- Ugeskema – lektioner tilføjes/fjernes under fanen *Skema* i hvert fag
-- Beskeder med elever i egne fag
-- Opret, **redigér** og slet opslag, materialer, opgaver og lektioner i egne fag
-- Bedøm afleveringer med karakter + feedback
-- Elevliste og karakterbog pr. fag
-
-## Demo uden installation
-`demo/portal.html` er hele portalen i én fil – dobbeltklik på den, så åbner den i browseren.
-Data gemmes kun i den browser, du bruger. Filen bygges fra koden med `npm run demo`.
+**Eleven**
+- Bøger i seneste udgave, mobilvenlig læsning, “Ny version – se ændringer”
+- Søgning, bogmærker, personlige noter, formelsamling med beregnere, PDF-download (hvis tilladt)
+- Skema, opgaver, karakterer og beskeder
 
 ## Kom i gang
-Kræver kun [Node.js](https://nodejs.org) 18 eller nyere – ingen pakker skal installeres.
+
+Kræver [Node.js](https://nodejs.org) 18 eller nyere.
 
 ```bash
-npm start          # starter på http://localhost:3000
-npm run reset      # nulstiller databasen til demodata
-npm test           # kører API-testene
-npm run demo       # bygger demo/portal.html
+npm install        # kun nødvendigt for AI (Anthropic SDK)
+npm start          # http://localhost:3000
+npm run reset      # nulstil til demodata
+npm test           # API-test af hele arbejdsgangen
+npm run demo       # byg demo/portal.html (kører uden server)
 ```
 
-Port kan ændres: `PORT=8080 npm start`.
+**AI (valgfrit):** Sæt `ANTHROPIC_API_KEY`, før portalen startes. Uden nøgle virker alt undtagen “forklar enklere”, “foreslå formulering” og frie spørgsmål.
+**Retsinformation (valgfrit):** Sæt `RETSINFORMATION_HARVEST_URL` til Civilstyrelsens API-endepunkt (se `server.js`).
 
 ### Demo-brugere
 | Rolle | Brugernavn | Adgangskode |
-|-------|-----------|-------------|
-| Lærer | `lars` (Navigation, Søret, Meteorologi, Maritim engelsk) | `laerer123` |
-| Lærer | `mette` (Skibsteknik, Stabilitet, Sikkerhed) | `laerer123` |
-| Lærer | `peter` (Sømandskab, El-drift, Kommunikation/service/turisme) | `laerer123` |
-| Elev  | `anna` (Skibsfører), `jonas` (Kystskipper), `freja` (Færgenavigatør) | `elev123` |
+|---|---|---|
+| Administrator | `admin` | `admin123` |
+| Underviser (Søret, Navigation …) | `lars` | `laerer123` |
+| Underviser (Stabilitet, Skibsteknik …) | `mette` | `laerer123` |
+| Underviser (Færgenavigatør-fag) | `peter` | `laerer123` |
+| Elev (Skibsfører) | `anna` | `elev123` |
+| Elev (Kystskipper) | `jonas` | `elev123` |
+| Elev (Færgenavigatør) | `freja` | `elev123` |
 
-## Teknik
-- `api.js` – portalens logik: ruter, adgangskontrol (elever/lærere ser kun deres egne fag), sessioner
-- `server.js` – Node.js HTTP-server omkring `api.js` med JSON-fil som database
-- `build-demo.js` – samler portalen i én HTML-fil, der kører uden server
-- `public/` – `app.js` (kerne og sider), `books.js` (lærebøger), `studio.js` (Lærerstudio), `markdown.js`, `icons.js` (Lucide-ikoner, ISC-licens), `sw.js` + `manifest.webmanifest` (installérbar app)
-- `seed.js` – fag, brugere og demoindhold
-- Data gemmes i `data/db.json` (oprettes automatisk, ikke i git)
+Lovændringen i demodata (“STCW A-VIII/1 … FIKTIV DEMO”) er opdigtet og kun til afprøvning.
 
-Fag, brugere og hold ændres i `seed.js` efterfulgt af `npm run reset`.
+## Opbygning
+| Fil/mappe | Indhold |
+|---|---|
+| `api.js` | Kerne: ruter, sessioner, adgangskontrol (administrator/underviser/elev) og indlæsning af moduler |
+| `modules/content.js` | Centrale oplysninger, retskilder, formelbibliotek og henvisninger |
+| `modules/books.js` | Bøger, kapitler, revisioner, udgaver, ændringslister, elevlæsning, søgning, bogmærker, noter, notifikationer, import/eksport |
+| `modules/legal.js` | Lovovervågning, konsekvensanalyse, forslag, godkendelse og dokumentation |
+| `modules/assistant.js` | Assistentkommandoer og prompter til Claude |
+| `modules/admin.js` | Brugere, elevgrupper, fag, produkter, persondata |
+| `shared/formula.js` | Sikker formelmotor med mellemregninger og kontrol (server + browser) |
+| `shared/diff.js` | Sammenligning af tekst mellem versioner (server + browser) |
+| `server.js` | HTTP-server, JSON-fil som database, Claude via Anthropic SDK, Retsinformation-adapter |
+| `seed.js`, `seed-content.js` | Demodata: fag, brugere, bøger, formler, retskilder og udgavehistorik |
+| `public/` | Frontend (PWA): `app.js`, `dashboard.js`, `books.js`, `formulas.js`, `legal.js`, `assistant.js`, `admin.js` m.fl. |
+| `build-demo.js` | Samler det hele i én HTML-fil, der kører uden server |
 
-> Portalen er lavet til lokal brug. Skal den på nettet, bør den have HTTPS, rigtige adgangskoder og en egentlig database.
+Ikoner: [Lucide](https://lucide.dev) (ISC-licens) via Streamline. PDF/Word-import og PDF-eksport bruger pdf.js, mammoth og jsPDF fra cdnjs, hentet først når funktionen bruges.

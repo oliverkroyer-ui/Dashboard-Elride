@@ -69,39 +69,123 @@ const { createServer, loadDb } = require('./server');
     const book = (await call('GET', '/api/subjects/s-ret/gradebook', null, lars)).data;
     assert.ok(book.rows.find((r) => r.student.username === 'anna').cells.some((c) => c.grade === '12'));
 
-    // Lærebøger: elever ser kun udgivne bøger og kapitler
     const peter = await login('peter', 'laerer123');
-    assert.ok(!(await call('GET', '/api/books', null, freja)).data.books.some((b) => b.id === 'b-el'), 'kladde-bog skjult for elev');
+    const admin = await login('admin', 'admin123');
+
+    // ---- Udgaver: eleven ser kun udgivet indhold ----
+    assert.ok(!(await call('GET', '/api/books', null, freja)).data.books.some((b) => b.id === 'b-el'), 'uudgivet bog er skjult for elev');
     assert.strictEqual((await call('GET', '/api/books/b-el', null, freja)).status, 404);
-    const navBook = (await call('GET', '/api/books/b-nav', null, anna)).data;
-    assert.ok(!navBook.chapters.some((c) => c.id === 'c-nav3'), 'kladde-kapitel skjult');
-    assert.strictEqual((await call('GET', '/api/chapters/c-nav3', null, anna)).status, 404);
+    let ret = (await call('GET', '/api/books/b-ret', null, anna)).data;
+    assert.strictEqual(ret.viewing.version, '2.3');
+    assert.ok(!ret.chapters.some((c) => c.id === 'c-ret4'), 'kladdekapitel er ikke med i udgaven');
+    assert.strictEqual((await call('GET', '/api/books/b-ret/chapters/c-ret4', null, anna)).status, 404);
 
-    // Lærer redigerer kapitel → version gemmes → kan gendannes
-    assert.strictEqual((await call('PUT', '/api/chapters/c-nav1', { content: 'x' }, mette)).status, 403, 'kun egne fag');
-    assert.strictEqual((await call('PUT', '/api/chapters/c-nav1', { content: '## Ny tekst' }, lars)).status, 200);
-    const ch = (await call('GET', '/api/chapters/c-nav1', null, lars)).data;
-    assert.strictEqual(ch.content, '## Ny tekst'); assert.strictEqual(ch.revisions.length, 1);
-    await call('POST', '/api/chapters/c-nav1/restore/0', null, lars);
-    assert.ok((await call('GET', '/api/chapters/c-nav1', null, lars)).data.content.includes('Søkortet er navigatørens'));
+    // Underviseren retter et udgivet kapitel – eleven ser stadig den udgivne tekst
+    assert.strictEqual((await call('PUT', '/api/chapters/c-ret1', { content: 'x' }, mette)).status, 403, 'kun egne fag');
+    await call('PUT', '/api/chapters/c-ret1', { content: 'Ny indledning til søvejsreglerne.' }, lars);
+    let annaCh = (await call('GET', '/api/books/b-ret/chapters/c-ret1', null, anna)).data;
+    assert.ok(annaCh.content.includes('COLREG'), 'eleven ser ikke ufærdige ændringer');
+    const revs = (await call('GET', '/api/chapters/c-ret1', null, lars)).data.revisions;
+    assert.ok(revs.length >= 1);
+    await call('POST', '/api/chapters/c-ret1/restore/0', null, lars);
+    assert.ok((await call('GET', '/api/chapters/c-ret1', null, lars)).data.content.includes('COLREG'), 'gendannelse virker');
 
-    // Ny bog + kapitel, udgiv og læs
+    // ---- Formler: kontrol finder fejl, beregning virker ----
+    const fx = (await call('GET', '/api/formulas', null, lars)).data.formulas;
+    assert.ok(fx.find((f) => f.key === 'gm').issues.length === 0, 'GM-formlen er fejlfri');
+    assert.ok(fx.find((f) => f.key === 'kraengning-gammel').issues.some((i) => i.level === 'fejl'), 'fejl i gammel formel opdages');
+    const check = (await call('POST', '/api/assistant', { command: 'tjek-formler' }, lars)).data;
+    assert.ok(check.broken.some((b) => b.ref === '{{formel:trim-gammel}}'), 'henvisning til ukendt formel opdages');
+    const tasks = (await call('POST', '/api/assistant', { command: 'opgaver', category: 'stabilitet', count: 5, seed: 7 }, mette)).data.tasks;
+    assert.strictEqual(tasks.length, 5); assert.ok(tasks[0].answer.includes('='));
+
+    // ---- Lovændring: forslag → godkend → én ændring opdaterer alle kapitler ----
+    const change = (await call('GET', '/api/legal/changes/lc-demo1', null, lars)).data;
+    const kinds = change.proposals.map((p) => p.kind);
+    assert.ok(['kilde', 'fakta', 'tekst', 'gennemse'].every((k) => kinds.includes(k)), 'alle forslagstyper laves: ' + kinds);
+    assert.strictEqual((await call('POST', `/api/proposals/${change.proposals[0].id}/decide`, { decision: 'godkend' }, anna)).status, 403, 'elever kan ikke godkende');
+    for (const p of change.proposals) {
+      const r = await call('POST', `/api/proposals/${p.id}/decide`, { decision: 'godkend' }, lars);
+      assert.strictEqual(r.status, 200, JSON.stringify(r.data));
+    }
+    const after = (await call('GET', '/api/legal', null, lars)).data;
+    assert.strictEqual(after.changes.find((c) => c.id === 'lc-demo1').status, 'afsluttet');
+    assert.ok(after.log.length >= change.proposals.length, 'ændringerne er dokumenteret');
+    assert.ok(after.log.some((l) => l.source.includes('STCW') && l.effectiveFrom === '2027-07-01'), 'dokumentation har kilde og dato');
+    const ret3 = (await call('GET', '/api/chapters/c-ret3', null, lars)).data;
+    assert.ok(ret3.content.includes('{{fakta:hvile-7d}}'), 'fritekst er erstattet med henvisning');
+    assert.strictEqual(ret3.refs.facts['hvile-7d'].value, '80');
+    // Eleven ser stadig den gamle udgave, indtil der udgives
+    annaCh = (await call('GET', '/api/books/b-ret/chapters/c-ret2', null, anna)).data;
+    assert.strictEqual(annaCh.refs.facts['hvile-7d'].value, '77');
+
+    // ---- Udgiv ny version → eleven får besked og kan se ændringerne ----
+    const pending = (await call('GET', '/api/books/b-ret/pending', null, lars)).data;
+    assert.ok(pending.changes.some((c) => c.chapterId === 'c-ret2'), 'godkendte centrale oplysninger kommer automatisk med');
+    assert.ok(!pending.changes.some((c) => c.chapterId === 'c-ret3'), 'tekstændringer kræver, at kapitlet er markeret klar');
+    await call('PUT', '/api/chapters/c-ret3', { ready: true }, lars);
+    const pending2 = (await call('GET', '/api/books/b-ret/pending', null, lars)).data;
+    assert.ok(pending2.changeCount >= 2 && pending2.next.minor === '2.4', JSON.stringify(pending2.next));
+    const pub = await call('POST', '/api/books/b-ret/publish', { kind: 'minor', notes: 'Nye krav til hviletid' }, lars);
+    assert.strictEqual(pub.status, 201); assert.strictEqual(pub.data.version, '2.4');
+    assert.strictEqual((await call('POST', '/api/books/b-ret/publish', { kind: 'minor' }, lars)).status, 409, 'kan ikke udgive uden ændringer');
+    const notes = (await call('GET', '/api/notifications', null, anna)).data;
+    assert.ok(notes.notifications.some((n) => n.text.includes('version 2.4')), 'eleven får besked');
+    const diff = (await call('GET', `/api/editions/${pub.data.id}/changes`, null, anna)).data;
+    assert.strictEqual(diff.previous, '2.3');
+    assert.ok(JSON.stringify(diff.changes).includes('80'), 'ændringslisten viser den nye værdi');
+    annaCh = (await call('GET', '/api/books/b-ret/chapters/c-ret2', null, anna)).data;
+    assert.strictEqual(annaCh.refs.facts['hvile-7d'].value, '80');
+    // Ét kapitel kan udgives alene
+    await call('PUT', '/api/chapters/c-ret4', { content: 'Skibsføreren har det overordnede ansvar.' }, lars);
+    const one = await call('POST', '/api/books/b-ret/publish', { scope: 'kapitel', chapterId: 'c-ret4' }, lars);
+    assert.strictEqual(one.data.version, '2.5'); assert.strictEqual(one.data.scope, 'kapitel');
+
+    // ---- Elev: søg, bogmærke, noter, læst ----
+    const found = (await call('GET', '/api/search?q=hviletid', null, anna)).data.results;
+    assert.ok(found.some((r) => r.chapterId === 'c-ret2'));
+    assert.strictEqual((await call('POST', '/api/bookmarks', { bookId: 'b-ret', chapterId: 'c-ret2', label: 'Hviletid' }, anna)).status, 201);
+    await call('PUT', '/api/notes/c-ret2', { bookId: 'b-ret', text: 'Spørg til eksamen' }, anna);
+    const mine = (await call('GET', '/api/bookmarks', null, anna)).data;
+    assert.ok(mine.bookmarks.some((b) => b.label === 'Hviletid') && mine.notes.some((n) => n.text === 'Spørg til eksamen'));
+    assert.strictEqual((await call('POST', '/api/chapters/c-ret2/read', {}, anna)).status, 200);
+    assert.strictEqual((await call('POST', '/api/chapters/c-ret2/read', {}, freja)).status, 403, 'freja har ikke Søret');
+    // PDF kun hvis underviseren tillader det
+    assert.strictEqual((await call('GET', '/api/books/b-stab/export', null, anna)).status, 403);
+    assert.strictEqual((await call('GET', '/api/books/b-ret/export', null, anna)).status, 200);
+
+    // ---- Central oplysning ændres ét sted ----
+    const facts = (await call('GET', '/api/facts', null, mette)).data.facts;
+    const rho = facts.find((f) => f.key === 'rho-salt');
+    assert.ok(rho.usage.length >= 1);
+    await call('PUT', `/api/facts/${rho.id}`, { value: '1,026', why: 'test' }, mette);
+    assert.strictEqual((await call('GET', '/api/chapters/c-stab3', null, mette)).data.refs.facts['rho-salt'].value, '1,026');
+
+    // ---- Import, ny bog og administration ----
     const nb = (await call('POST', '/api/subjects/s-el/books', { title: 'Ladeanlæg' }, peter)).data;
-    const nc = (await call('POST', `/api/books/${nb.id}/chapters`, { title: 'Intro', content: 'Hej' }, peter)).data;
-    await call('PUT', `/api/chapters/${nc.id}`, { published: true }, peter);
-    await call('PUT', `/api/books/${nb.id}`, { published: true }, peter);
-    assert.strictEqual((await call('POST', `/api/chapters/${nc.id}/read`, {}, freja)).status, 200);
-    assert.strictEqual((await call('GET', '/api/books', null, freja)).data.books.find((b) => b.id === nb.id).readCount, 1);
-    assert.strictEqual((await call('POST', `/api/chapters/${nc.id}/read`, {}, anna)).status, 403, 'anna har ikke El-drift');
+    const imp = await call('POST', `/api/books/${nb.id}/import`, { fileName: 'noter.docx', chapters: [{ title: 'Intro', content: 'Hej' }, { title: 'Del', content: 'x', level: 2 }] }, peter);
+    assert.strictEqual(imp.data.created, 2);
+    const nbView = (await call('GET', `/api/books/${nb.id}`, null, peter)).data;
+    assert.ok(nbView.chapters[1].parentId === nbView.chapters[0].id, 'underkapitel ved import');
+    assert.strictEqual((await call('POST', '/api/admin/users', { name: 'X', username: 'xlaerer', role: 'teacher', password: 'hemmelig123' }, lars)).status, 403, 'kun admin opretter undervisere');
+    const newStudent = await call('POST', '/api/admin/users', { name: 'Ny Elev', username: 'nyelev', role: 'student', password: 'hemmelig123' }, lars);
+    assert.strictEqual(newStudent.status, 201);
+    const grp = await call('POST', '/api/admin/groups', { name: 'Hold B', studentIds: [newStudent.data.id], subjectIds: ['s-nav'] }, lars);
+    assert.strictEqual(grp.status, 201);
+    const ny = await login('nyelev', 'hemmelig123');
+    assert.ok((await call('GET', '/api/books', null, ny)).data.books.some((b) => b.id === 'b-nav'), 'gruppen giver adgang til fagets bøger');
+    assert.strictEqual((await call('POST', '/api/admin/products', { name: 'x' }, lars)).status, 403);
+    assert.strictEqual((await call('POST', '/api/admin/products', { name: 'Pakke', kind: 'fagpakke', price: 99 }, admin)).status, 201);
+    assert.ok((await call('GET', '/api/me/data', null, anna)).data.notes.length >= 1, 'indsigt i egne data');
 
     // Redigér alt: fag, materialer, opgaver
     assert.strictEqual((await call('PUT', '/api/subjects/s-nav', { description: 'Ny beskrivelse', color: '#123456' }, lars)).status, 200);
     assert.strictEqual((await call('PUT', '/api/subjects/s-nav', { color: 'rød' }, lars)).status, 400);
     assert.strictEqual((await call('PUT', '/api/materials/m1', { title: 'Opdateret', content: 'x' }, lars)).status, 200);
     assert.strictEqual((await call('PUT', '/api/materials/m1', { title: 'x' }, anna)).status, 403);
-    const studio = (await call('GET', '/api/studio', null, lars)).data;
-    assert.ok(studio.activity.some((x) => x.text.includes('Opdateret')) && studio.stats.books >= 2);
-    assert.strictEqual((await call('GET', '/api/studio', null, anna)).status, 403);
+    const ov = (await call('GET', '/api/teacher/overview', null, lars)).data;
+    assert.ok(ov.books.length >= 2 && ov.formulas.count >= 9);
+    assert.strictEqual((await call('GET', '/api/teacher/overview', null, anna)).status, 403);
 
     // Path traversal
     const r = await fetch(base + '/..%2fserver.js');

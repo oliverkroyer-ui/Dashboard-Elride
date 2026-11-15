@@ -1,7 +1,7 @@
 // Service worker: gør portalen installérbar og lader app-skallen åbne uden net.
 // API-kald går altid til serveren (ingen gamle data fra cachen).
-const CACHE = 'marnav-portal-v1';
-const SHELL = ['/', '/index.html', '/styles.css', '/icons.js', '/markdown.js', '/books.js', '/studio.js', '/app.js', '/favicon.svg', '/manifest.webmanifest'];
+const CACHE = 'marnav-portal-v3';
+const SHELL = ['/', '/index.html', '/styles.css', '/shared/formula.js', '/shared/diff.js', '/icons.js', '/markdown.js', '/formulas.js', '/books.js', '/legal.js', '/assistant.js', '/admin.js', '/studio.js', '/dashboard.js', '/app.js', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

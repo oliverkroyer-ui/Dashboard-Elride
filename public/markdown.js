@@ -77,3 +77,55 @@ function md(src) {
   div.innerHTML = mdToHtml(src);
   return div;
 }
+
+// ---------- Indhold med henvisninger ----------
+// {{fakta:nøgle}} → værdi, {{kilde:nøgle}} → kildehenvisning, {{formel:nøgle}} → interaktiv beregner.
+// refs = { facts, formulas, sources } – enten et låst øjebliksbillede (udgave) eller live (kladde).
+const REF_TOKEN = /\{\{(fakta|formel|kilde):([A-Za-z0-9_-]+)\}\}/g;
+function renderDoc(src, refs, opts = {}) {
+  refs = refs || { facts: {}, formulas: {}, sources: {} };
+  const root = md(src);
+  // Afsnit, der kun består af én formel, bliver til en blok
+  root.querySelectorAll('p').forEach((p) => {
+    const m = /^\s*\{\{formel:([A-Za-z0-9_-]+)\}\}\s*$/.exec(p.textContent);
+    if (m) p.replaceWith(refNode('formel', m[1], refs, opts, true));
+  });
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  while (walker.nextNode()) if (/\{\{(fakta|formel|kilde):/.test(walker.currentNode.nodeValue)) hits.push(walker.currentNode);
+  for (const node of hits) {
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    const text = node.nodeValue;
+    for (const m of text.matchAll(REF_TOKEN)) {
+      frag.append(text.slice(last, m.index), refNode(m[1], m[2], refs, opts, false));
+      last = m.index + m[0].length;
+    }
+    frag.append(text.slice(last));
+    node.replaceWith(frag);
+  }
+  // Overskrifter får ankre, så de kan bogmærkes og linkes
+  root.querySelectorAll('h2, h3, h4').forEach((hd, i) => { hd.id = 'afsnit-' + (i + 1); });
+  return root;
+}
+function refNode(kind, key, refs, opts, block) {
+  if (kind === 'fakta') {
+    const f = refs.facts[key];
+    if (!f) return h('span.ref.ref-missing', { title: 'Ukendt central oplysning' }, `[${key}]`);
+    return h('span.ref.ref-fact', { title: `${f.label} – central oplysning${opts.teacher ? ' (rettes under Centrale oplysninger)' : ''}` }, `${f.value}${f.unit ? ' ' + f.unit : ''}`);
+  }
+  if (kind === 'kilde') {
+    const s = refs.sources[key];
+    if (!s) return h('span.ref.ref-missing', `[ukendt kilde: ${key}]`);
+    const chip = h('button.ref.ref-source', { type: 'button', 'aria-expanded': 'false', title: `${s.sourceTitle} ${s.ref}` }, icon('scale', 14), ` ${s.source} ${s.ref}`);
+    const pop = h('span.source-pop', { hidden: true },
+      h('strong', `${s.source} ${s.ref}${s.title ? ' – ' + s.title : ''}`), h('span.source-text', s.text),
+      s.validFrom ? h('span.small.muted', `Gælder fra ${s.validFrom}`) : null,
+      s.url ? h('a.small', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, 'Officiel kilde ↗') : null);
+    chip.addEventListener('click', () => { pop.hidden = !pop.hidden; chip.setAttribute('aria-expanded', String(!pop.hidden)); });
+    return h('span.ref-wrap', chip, pop);
+  }
+  const f = refs.formulas[key];
+  if (!f) return h(block ? 'div.ref.ref-missing.block' : 'span.ref.ref-missing', `Formlen “${key}” findes ikke i formelbiblioteket`);
+  return typeof formulaWidget === 'function' ? formulaWidget(f, { compact: !block }) : h('span', f.name);
+}

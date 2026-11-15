@@ -8,13 +8,16 @@ const read = (f) => fs.readFileSync(path.join(__dirname, f), 'utf8');
 const css = read('public/styles.css');
 const favicon = 'data:image/svg+xml;base64,' + Buffer.from(read('public/favicon.svg')).toString('base64');
 const body = read('public/index.html').match(/<body>([\s\S]*?)<script/)[1].replace(/\/favicon\.svg/g, favicon);
-const appJs = ['icons.js', 'markdown.js', 'books.js', 'studio.js', 'app.js']
-  .map((f) => read('public/' + f)).join('\n;\n').replace(/\/favicon\.svg/g, favicon);
+// Samme filer og rækkefølge som public/index.html
+const frontFiles = [...read('public/index.html').matchAll(/<script src="\/([^"]+)"/g)].map((m) => m[1]);
+const sharedJs = frontFiles.filter((f) => f.startsWith('shared/')).map((f) => read(f)).join('\n;\n');
+const frontJs = frontFiles.filter((f) => !f.startsWith('shared/')).map((f) => read('public/' + f)).join('\n;\n').replace(/\/favicon\.svg/g, favicon);
+const serverJs = ['seed-content.js', 'seed.js', 'modules/content.js', 'modules/books.js', 'modules/legal.js', 'modules/assistant.js', 'modules/admin.js', 'api.js'].map(read).join('\n;\n');
 
 const adapter = `
 (function () {
   'use strict';
-  var KEY = 'marstal-portal-demo-v1';
+  var KEY = 'marstal-portal-demo-v3';
   var store = {
     get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} },
@@ -48,10 +51,12 @@ const adapter = `
     opts = opts || {};
     var body = {};
     try { body = opts.body ? JSON.parse(opts.body) : {}; } catch (e) {}
-    var out = api.handle((opts.method || 'GET').toUpperCase(), u.pathname, body, sid);
-    if (out.sid) { sid = out.sid; ss.set(KEY + ':user', api.userIdFor(sid)); }
-    if (out.clearSid) { sid = null; ss.del(KEY + ':user'); }
-    return Promise.resolve(new Response(JSON.stringify(out.data), { status: out.status, headers: { 'Content-Type': 'application/json' } }));
+    var query = {}; u.searchParams.forEach(function (v, k) { query[k] = v; });
+    return Promise.resolve(api.handle((opts.method || 'GET').toUpperCase(), u.pathname, body, sid, query)).then(function (out) {
+      if (out.sid) { sid = out.sid; ss.set(KEY + ':user', api.userIdFor(sid)); }
+      if (out.clearSid) { sid = null; ss.del(KEY + ':user'); }
+      return new Response(JSON.stringify(out.data), { status: out.status, headers: { 'Content-Type': 'application/json' } });
+    });
   };
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -86,17 +91,17 @@ ${demoCss}
 </style>
 ${body}
 <script>
-${read('seed.js')}
+${sharedJs}
 </script>
 <script>
-${read('api.js')}
+${serverJs}
 </script>
 <script>
 window.PORTAL_DEMO = true;
 ${adapter}
 </script>
 <script>
-${appJs}
+${frontJs}
 </script>
 `;
 // Helt dokument, så filen også kan åbnes ved at dobbeltklikke på den.

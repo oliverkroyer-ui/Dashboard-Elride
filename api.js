@@ -11,8 +11,9 @@ function createApi(env) {
   const saveDb = () => env.save(db);
   function loadDb(reset = false) {
     db = reset ? null : env.load();
-    if (db) { for (const k of ['lessons', 'messages', 'books', 'chapters', 'reads', 'activity']) db[k] = db[k] || []; }
+    if (db) { db.monitor = db.monitor || null; for (const k of ['lessons', 'messages', 'books', 'chapters', 'reads', 'activity', 'editions', 'facts', 'sources', 'formulas', 'legalChanges', 'proposals', 'changeLog', 'notifications', 'bookmarks', 'notes', 'groups', 'products']) db[k] = db[k] || []; }
     else { db = env.seed(env.hashPassword); saveDb(); }
+    runSeedScript();
   }
   const hashPassword = env.hashPassword, verifyPassword = env.verifyPassword;
   const reply = (status, data, extra = {}) => ({ status, data, ...extra });
@@ -41,19 +42,22 @@ function safeLink(v) {
   if (s && !/^https?:\/\//i.test(s)) throw new HttpError(400, 'Link skal starte med http:// eller https://');
   return s;
 }
+// Administrator har altid samme rettigheder som en underviser.
+const isStaff = (u) => !!u && (u.role === 'teacher' || u.role === 'admin');
 function requireRole(user, role) {
   if (!user) throw new HttpError(401, 'Du skal være logget ind');
-  if (role && user.role !== role) throw new HttpError(403, 'Du har ikke adgang til dette');
+  if (role === 'teacher' ? !isStaff(user) : role && user.role !== role) throw new HttpError(403, 'Du har ikke adgang til dette');
 }
 function subjectFor(user, subjectId) {
   const s = db.subjects.find((x) => x.id === subjectId);
   if (!s) throw new HttpError(404, 'Faget findes ikke');
-  const member = user.role === 'teacher' ? s.teacherIds.includes(user.id) : s.studentIds.includes(user.id);
+  const member = user.role === 'admin' || (isStaff(user) ? s.teacherIds.includes(user.id) : s.studentIds.includes(user.id));
   if (!member) throw new HttpError(403, 'Du er ikke tilknyttet dette fag');
   return s;
 }
 function mySubjects(user) {
-  return db.subjects.filter((s) => (user.role === 'teacher' ? s.teacherIds : s.studentIds).includes(user.id));
+  if (user.role === 'admin') return db.subjects.slice();
+  return db.subjects.filter((s) => (isStaff(user) ? s.teacherIds : s.studentIds).includes(user.id));
 }
 const nameOf = (id) => (db.users.find((u) => u.id === id) || {}).name || 'Ukendt';
 const byDateDesc = (k) => (a, b) => (b[k] || '').localeCompare(a[k] || '');
@@ -66,7 +70,7 @@ function subjectSummary(s, user) {
     materialCount: db.materials.filter((m) => m.subjectId === s.id).length,
     assignmentCount: assignments.length,
   };
-  if (user.role === 'teacher') {
+  if (isStaff(user)) {
     base.studentCount = s.studentIds.length;
     base.ungraded = db.submissions.filter((x) => x.grade == null && assignments.some((a) => a.id === x.assignmentId)).length;
   } else {
@@ -161,9 +165,9 @@ route('GET', '/api/subjects/:id', ({ user, params }) => {
     materials: db.materials.filter((m) => m.subjectId === s.id).sort(byDateDesc('createdAt')).map((m) => ({ ...m, author: nameOf(m.authorId) })),
     assignments: db.assignments.filter((a) => a.subjectId === s.id).sort((a, b) => a.due.localeCompare(b.due)).map((a) => assignmentView(a, user, s)),
     announcements: db.announcements.filter((n) => n.subjectId === s.id).sort(byDateDesc('createdAt')).map((n) => ({ ...n, author: nameOf(n.authorId) })),
-    books: db.books.filter((b) => b.subjectId === s.id && (user.role === 'teacher' || b.published)).map((b) => bookSummary(user, b)),
+    books: ctx.booksForSubject(user, s.id),
   };
-  if (user.role === 'teacher') {
+  if (isStaff(user)) {
     out.students = s.studentIds.map((id) => publicUser(db.users.find((u) => u.id === id))).filter(Boolean);
   }
   return reply(200, out);
@@ -309,7 +313,7 @@ route('DELETE', '/api/lessons/:id', ({ user, params }) => {
 // ---------- Beskeder (elev ↔ lærer i fælles fag) ----------
 function contactsOf(user) {
   const ids = new Set();
-  for (const s of mySubjects(user)) (user.role === 'teacher' ? s.studentIds : s.teacherIds).forEach((id) => ids.add(id));
+  for (const s of mySubjects(user)) (isStaff(user) ? s.studentIds : s.teacherIds).forEach((id) => ids.add(id));
   ids.delete(user.id);
   return [...ids].map((id) => db.users.find((u) => u.id === id)).filter(Boolean);
 }
@@ -417,256 +421,48 @@ route('POST', '/api/messages/read/:contactId', ({ user, params }) => {
     return reply(200, l);
   });
 
-  // ---------- Lærebøger ----------
-  const MAX_REVISIONS = 30;
-  function canSeeBook(user, b) {
-    subjectFor(user, b.subjectId);
-    if (user.role !== 'teacher' && !b.published) throw new HttpError(404, 'Bogen findes ikke');
-  }
-  function bookOr404(id) {
-    const b = db.books.find((x) => x.id === id);
-    if (!b) throw new HttpError(404, 'Bogen findes ikke');
-    return b;
-  }
-  function chapterOr404(id) {
-    const c = db.chapters.find((x) => x.id === id);
-    if (!c) throw new HttpError(404, 'Kapitlet findes ikke');
-    return c;
-  }
-  function visibleChapters(user, bookId) {
-    return db.chapters.filter((c) => c.bookId === bookId && (user.role === 'teacher' || c.published)).sort((a, b) => a.order - b.order);
-  }
-  function bookSummary(user, b) {
-    const s = db.subjects.find((x) => x.id === b.subjectId) || {};
-    const chs = visibleChapters(user, b.id);
-    const out = {
-      id: b.id, subjectId: b.subjectId, subjectName: s.name, subjectCode: s.code, color: s.color,
-      title: b.title, description: b.description, published: b.published,
-      chapterCount: chs.length, updatedAt: b.updatedAt, author: nameOf(b.authorId),
-    };
-    if (user.role === 'teacher') out.draftChapters = chs.filter((c) => !c.published).length;
-    else out.readCount = chs.filter((c) => db.reads.some((r) => r.userId === user.id && r.chapterId === c.id)).length;
-    return out;
-  }
-  function touchBook(user, b) { b.updatedAt = new Date().toISOString(); b.updatedBy = user.id; }
+  // ---------- Moduler ----------
+  // Hvert modul får en fælles værktøjskasse (ctx) og registrerer sine egne ruter.
+  // Nye funktioner tilføjes som nye moduler uden at røre kernen.
+  const ctx = {
+    get db() { return db; }, env, route, reply, HttpError, str, safeLink, requireRole, subjectFor, mySubjects,
+    nameOf, newId, saveDb, logActivity, publicUser, isStaff, byDateDesc, hashPassword,
+  };
+  const modules = (typeof module !== 'undefined' && module.exports)
+    ? ['content', 'books', 'legal', 'assistant', 'admin'].map((m) => require('./modules/' + m))
+    : (root.PortalModules || []);
+  modules.forEach((m) => m.install(ctx));
 
-  route('GET', '/api/books', ({ user }) => {
-    requireRole(user);
-    const ids = new Set(mySubjects(user).map((s) => s.id));
-    const books = db.books.filter((b) => ids.has(b.subjectId) && (user.role === 'teacher' || b.published))
-      .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-      .map((b) => bookSummary(user, b));
-    return reply(200, { books });
-  });
-  route('POST', '/api/subjects/:id/books', ({ user, params, body }) => {
-    requireRole(user, 'teacher');
-    const s = subjectFor(user, params.id);
-    const now = new Date().toISOString();
-    const b = { id: newId('b'), subjectId: s.id, title: str(body.title, 'titel', { max: 200 }), description: str(body.description, 'beskrivelse', { max: 1000, required: false }), published: false, authorId: user.id, createdAt: now, updatedAt: now, updatedBy: user.id };
-    db.books.push(b);
-    logActivity(user, s.id, `Oprettede lærebogen “${b.title}”`, `#/rediger-bog/${b.id}`);
-    saveDb();
-    return reply(201, b);
-  });
-  route('GET', '/api/books/:id', ({ user, params }) => {
-    requireRole(user);
-    const b = bookOr404(params.id);
-    canSeeBook(user, b);
-    const chapters = visibleChapters(user, b.id).map((c) => ({
-      id: c.id, title: c.title, order: c.order, published: c.published, updatedAt: c.updatedAt,
-      words: (c.content.match(/\S+/g) || []).length,
-      read: user.role === 'student' ? db.reads.some((r) => r.userId === user.id && r.chapterId === c.id) : undefined,
-    }));
-    return reply(200, { ...bookSummary(user, b), chapters, canEdit: user.role === 'teacher' });
-  });
-  route('PUT', '/api/books/:id', ({ user, params, body }) => {
-    requireRole(user, 'teacher');
-    const b = bookOr404(params.id);
-    subjectFor(user, b.subjectId);
-    if (body.title !== undefined) b.title = str(body.title, 'titel', { max: 200 });
-    if (body.description !== undefined) b.description = str(body.description, 'beskrivelse', { max: 1000, required: false });
-    if (body.published !== undefined) {
-      b.published = !!body.published;
-      logActivity(user, b.subjectId, `${b.published ? 'Udgav' : 'Trak'} lærebogen “${b.title}”${b.published ? '' : ' tilbage'}`, `#/bog/${b.id}`);
-    } else logActivity(user, b.subjectId, `Opdaterede lærebogen “${b.title}”`, `#/rediger-bog/${b.id}`);
-    touchBook(user, b);
-    saveDb();
-    return reply(200, b);
-  });
-  route('DELETE', '/api/books/:id', ({ user, params }) => {
-    requireRole(user, 'teacher');
-    const b = bookOr404(params.id);
-    subjectFor(user, b.subjectId);
-    const chapterIds = new Set(db.chapters.filter((c) => c.bookId === b.id).map((c) => c.id));
-    db.books = db.books.filter((x) => x.id !== b.id);
-    db.chapters = db.chapters.filter((c) => c.bookId !== b.id);
-    db.reads = db.reads.filter((r) => !chapterIds.has(r.chapterId));
-    logActivity(user, b.subjectId, `Slettede lærebogen “${b.title}”`);
-    saveDb();
-    return reply(200, { ok: true });
-  });
-
-  // Kapitler
-  route('POST', '/api/books/:id/chapters', ({ user, params, body }) => {
-    requireRole(user, 'teacher');
-    const b = bookOr404(params.id);
-    subjectFor(user, b.subjectId);
-    const siblings = db.chapters.filter((c) => c.bookId === b.id);
-    const now = new Date().toISOString();
-    const c = {
-      id: newId('c'), bookId: b.id, order: siblings.reduce((m, x) => Math.max(m, x.order), 0) + 1,
-      title: str(body.title, 'titel', { max: 200 }), content: str(body.content, 'indhold', { required: false, max: 200000 }),
-      published: false, createdAt: now, updatedAt: now, updatedBy: user.id, revisions: [],
-    };
-    db.chapters.push(c);
-    touchBook(user, b);
-    logActivity(user, b.subjectId, `Tilføjede kapitlet “${c.title}” i “${b.title}”`, `#/rediger-kapitel/${c.id}`);
-    saveDb();
-    return reply(201, c);
-  });
-  route('GET', '/api/chapters/:id', ({ user, params }) => {
-    requireRole(user);
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    canSeeBook(user, b);
-    if (user.role !== 'teacher' && !c.published) throw new HttpError(404, 'Kapitlet findes ikke');
-    const chs = visibleChapters(user, b.id);
-    const i = chs.findIndex((x) => x.id === c.id);
-    const out = {
-      id: c.id, bookId: b.id, bookTitle: b.title, subjectId: b.subjectId, color: (db.subjects.find((s) => s.id === b.subjectId) || {}).color,
-      title: c.title, content: c.content, published: c.published, order: c.order,
-      number: i + 1, total: chs.length, updatedAt: c.updatedAt, updatedBy: nameOf(c.updatedBy),
-      prev: chs[i - 1] ? { id: chs[i - 1].id, title: chs[i - 1].title } : null,
-      next: chs[i + 1] ? { id: chs[i + 1].id, title: chs[i + 1].title } : null,
-    };
-    if (user.role === 'teacher') out.revisions = c.revisions.map((r, idx) => ({ index: idx, title: r.title, savedAt: r.savedAt, savedBy: nameOf(r.savedBy), words: (r.content.match(/\S+/g) || []).length }));
-    else out.read = db.reads.some((r) => r.userId === user.id && r.chapterId === c.id);
-    return reply(200, out);
-  });
-  route('PUT', '/api/chapters/:id', ({ user, params, body }) => {
-    requireRole(user, 'teacher');
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    subjectFor(user, b.subjectId);
-    const title = body.title !== undefined ? str(body.title, 'titel', { max: 200 }) : c.title;
-    const content = body.content !== undefined ? str(body.content, 'indhold', { required: false, max: 200000 }) : c.content;
-    if (title !== c.title || content !== c.content) {
-      c.revisions.unshift({ title: c.title, content: c.content, savedAt: c.updatedAt, savedBy: c.updatedBy });
-      c.revisions = c.revisions.slice(0, MAX_REVISIONS);
-      c.title = title; c.content = content;
-      c.updatedAt = new Date().toISOString(); c.updatedBy = user.id;
-      logActivity(user, b.subjectId, `Redigerede kapitlet “${c.title}” i “${b.title}”`, `#/rediger-kapitel/${c.id}`);
+  // Startdata kan indeholde et lille "manuskript" (udgivelser og redigeringer), så
+  // demoen starter med en rigtig udgavehistorik. Køres én gang efter indlæsning.
+  function runSeedScript() {
+    if (!db.seedScript) return;
+    for (const step of db.seedScript) {
+      const user = db.users.find((u) => u.id === step.by);
+      if (step.publish) ctx.publishBook(user, db.books.find((b) => b.id === step.publish), step);
+      if (step.edit) { const c = db.chapters.find((x) => x.id === step.edit); ctx.saveRevision(c, user, step.why); Object.assign(c, step.set); if (step.at) c.updatedAt = step.at; }
     }
-    if (body.published !== undefined && !!body.published !== c.published) {
-      c.published = !!body.published;
-      logActivity(user, b.subjectId, `${c.published ? 'Udgav' : 'Gjorde kladde af'} kapitlet “${c.title}”`, `#/rediger-kapitel/${c.id}`);
-    }
-    touchBook(user, b);
+    delete db.seedScript;
     saveDb();
-    return reply(200, { id: c.id, title: c.title, published: c.published, updatedAt: c.updatedAt, revisionCount: c.revisions.length });
-  });
-  route('GET', '/api/chapters/:id/revisions/:index', ({ user, params }) => {
-    requireRole(user, 'teacher');
-    const c = chapterOr404(params.id);
-    subjectFor(user, bookOr404(c.bookId).subjectId);
-    const r = c.revisions[Number(params.index)];
-    if (!r) throw new HttpError(404, 'Versionen findes ikke');
-    return reply(200, { ...r, savedBy: nameOf(r.savedBy) });
-  });
-  route('POST', '/api/chapters/:id/restore/:index', ({ user, params }) => {
-    requireRole(user, 'teacher');
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    subjectFor(user, b.subjectId);
-    const r = c.revisions[Number(params.index)];
-    if (!r) throw new HttpError(404, 'Versionen findes ikke');
-    c.revisions.unshift({ title: c.title, content: c.content, savedAt: c.updatedAt, savedBy: c.updatedBy });
-    c.revisions = c.revisions.slice(0, MAX_REVISIONS);
-    c.title = r.title; c.content = r.content; c.updatedAt = new Date().toISOString(); c.updatedBy = user.id;
-    touchBook(user, b);
-    logActivity(user, b.subjectId, `Gendannede en tidligere version af “${c.title}”`, `#/rediger-kapitel/${c.id}`);
-    saveDb();
-    return reply(200, { ok: true });
-  });
-  route('POST', '/api/chapters/:id/move', ({ user, params, body }) => {
-    requireRole(user, 'teacher');
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    subjectFor(user, b.subjectId);
-    const chs = db.chapters.filter((x) => x.bookId === b.id).sort((x, y) => x.order - y.order);
-    const i = chs.indexOf(c), j = i + (Number(body.dir) < 0 ? -1 : 1);
-    if (j >= 0 && j < chs.length) { const o = chs[j].order; chs[j].order = c.order; c.order = o; touchBook(user, b); saveDb(); }
-    return reply(200, { ok: true });
-  });
-  route('DELETE', '/api/chapters/:id', ({ user, params }) => {
-    requireRole(user, 'teacher');
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    subjectFor(user, b.subjectId);
-    db.chapters = db.chapters.filter((x) => x.id !== c.id);
-    db.reads = db.reads.filter((r) => r.chapterId !== c.id);
-    touchBook(user, b);
-    logActivity(user, b.subjectId, `Slettede kapitlet “${c.title}” fra “${b.title}”`, `#/rediger-bog/${b.id}`);
-    saveDb();
-    return reply(200, { ok: true });
-  });
-  route('POST', '/api/chapters/:id/read', ({ user, params, body }) => {
-    requireRole(user, 'student');
-    const c = chapterOr404(params.id);
-    const b = bookOr404(c.bookId);
-    canSeeBook(user, b);
-    if (!c.published) throw new HttpError(404, 'Kapitlet findes ikke');
-    db.reads = db.reads.filter((r) => !(r.userId === user.id && r.chapterId === c.id));
-    if (body.read !== false) db.reads.push({ userId: user.id, chapterId: c.id, at: new Date().toISOString() });
-    saveDb();
-    return reply(200, { ok: true, read: body.read !== false });
-  });
-
-  // ---------- Lærerstudio ----------
-  route('GET', '/api/studio', ({ user }) => {
-    requireRole(user, 'teacher');
-    const subs = mySubjects(user);
-    const ids = new Set(subs.map((s) => s.id));
-    const books = db.books.filter((b) => ids.has(b.subjectId));
-    const bookIds = new Set(books.map((b) => b.id));
-    const chapters = db.chapters.filter((c) => bookIds.has(c.bookId));
-    const stats = {
-      books: books.length, publishedBooks: books.filter((b) => b.published).length,
-      chapters: chapters.length, draftChapters: chapters.filter((c) => !c.published).length,
-      words: chapters.reduce((n, c) => n + (c.content.match(/\S+/g) || []).length, 0),
-      materials: db.materials.filter((m) => ids.has(m.subjectId)).length,
-      assignments: db.assignments.filter((a) => ids.has(a.subjectId)).length,
-      lessons: db.lessons.filter((l) => ids.has(l.subjectId)).length,
-    };
-    const readers = (b) => {
-      const s = db.subjects.find((x) => x.id === b.subjectId);
-      const chs = chapters.filter((c) => c.bookId === b.id && c.published);
-      if (!chs.length || !s.studentIds.length) return 0;
-      const done = s.studentIds.filter((sid) => chs.every((c) => db.reads.some((r) => r.userId === sid && r.chapterId === c.id))).length;
-      return Math.round((done / s.studentIds.length) * 100);
-    };
-    return reply(200, {
-      stats,
-      subjects: subs.map((s) => ({ id: s.id, code: s.code, name: s.name, color: s.color, description: s.description, studentCount: s.studentIds.length })),
-      books: books.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).map((b) => ({ ...bookSummary(user, b), completion: readers(b) })),
-      activity: db.activity.filter((a) => ids.has(a.subjectId)).slice(0, 25).map((a) => ({ ...a, user: nameOf(a.userId), subjectName: (db.subjects.find((s) => s.id === a.subjectId) || {}).name })),
-    });
-  });
+  }
 
   // Kør en API-forespørgsel: returnerer { status, data, sid?, clearSid? }
-  function handle(method, pathname, body, sid) {
+  // Svaret kan være et løfte (fx AI-kald); kalderen skal derfor afvente det.
+  function handle(method, pathname, body, sid, query = {}) {
+    const fail = (err) => {
+      if (!(err instanceof HttpError)) console.error(err);
+      return reply(err.status || 500, { error: err instanceof HttpError ? err.message : 'Der opstod en fejl på serveren' });
+    };
     try {
       for (const r of routes) {
         const m = r.method === method && r.re.exec(pathname);
         if (!m) continue;
         const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
-        return r.handler({ user: userFromSid(sid), params, body: body || {}, sid });
+        const out = r.handler({ user: userFromSid(sid), params, body: body || {}, sid, query: query || {} });
+        return out && typeof out.then === 'function' ? out.catch(fail) : out;
       }
       throw new HttpError(404, 'Ukendt adresse');
-    } catch (err) {
-      if (!(err instanceof HttpError)) console.error(err);
-      return reply(err.status || 500, { error: err instanceof HttpError ? err.message : 'Der opstod en fejl på serveren' });
-    }
+    } catch (err) { return fail(err); }
   }
 
   // Bruges af browser-demoen til at genoprette et login efter genindlæsning.

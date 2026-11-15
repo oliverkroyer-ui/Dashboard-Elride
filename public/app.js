@@ -53,7 +53,7 @@ function dueInfo(iso) {
   if (d <= 3) return h('span.pill.warn', d === 0 ? 'Afleveres i dag' : `Om ${d} dag${d === 1 ? '' : 'e'}`);
   return h('span.pill', `Frist ${fmtDate(iso)}`);
 }
-const isTeacher = () => state.user && state.user.role === 'teacher';
+const isTeacher = () => !!state.user && (state.user.role === 'teacher' || state.user.role === 'admin');
 const formData = (form) => Object.fromEntries(new FormData(form).entries());
 function linkify(url) { return url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, 'Åbn link ↗') : null; }
 
@@ -66,7 +66,7 @@ function submitForm(form, fn, okMsg) {
     e.preventDefault();
     const btn = form.querySelector('button[type=submit]');
     if (btn) btn.disabled = true;
-    try { await fn(formData(form)); if (okMsg) toast(okMsg); }
+    try { await fn(formData(form), form); if (okMsg) toast(okMsg); }
     catch (err) { toast(err.message, true); }
     finally { if (btn) btn.disabled = false; }
   });
@@ -81,31 +81,47 @@ function updateChrome() {
   if (!state.user) { bar.hidden = true; tabbar.hidden = true; return; }
   bar.hidden = false; tabbar.hidden = false;
   document.getElementById('userName').textContent = state.user.name;
-  document.getElementById('roleBadge').textContent = isTeacher() ? 'Lærer' : 'Elev';
+  document.getElementById('roleBadge').textContent = { teacher: 'Underviser', admin: 'Admin', student: 'Elev' }[state.user.role];
   document.getElementById('avatar').textContent = state.user.name.split(' ').map((p) => p[0]).join('').slice(0, 2);
-  const current = location.hash || '#/';
+  const current = (location.hash || '#/').split('?')[0];
   // [href, label, ikon, vises i bundmenu på mobil]
-  const links = [['#/', 'Forside', 'home', true], ['#/skema', 'Skema', 'calendar', true], ['#/fag', 'Fag', 'layers', false],
-    ['#/boeger', 'Lærebøger', 'library', true], ['#/beskeder', 'Beskeder', 'chat', true]];
-  links.push(isTeacher() ? ['#/studio', 'Studio', 'code', true] : ['#/karakterer', 'Karakterer', 'award', true]);
-  const sections = { '#/fag': ['#/fag', '#/opgave'], '#/boeger': ['#/boeger', '#/bog/', '#/rediger-'], '#/studio': ['#/studio'] };
+  const links = isTeacher()
+    ? [['#/', 'Overblik', 'home', true], ['#/boeger', 'Materialer', 'library', true], ['#/formler', 'Formler', 'sigma', true],
+      ['#/lovaendringer', 'Lovændringer', 'scale', true], ['#/assistent', 'Assistent', 'sparkles', false], ['#/fag', 'Fag', 'layers', false],
+      ['#/beskeder', 'Beskeder', 'chat', false], ['#/mere', 'Mere', 'grid', true]]
+    : [['#/', 'Forside', 'home', true], ['#/boeger', 'Bøger', 'library', true], ['#/formelsamling', 'Formler', 'calculator', true],
+      ['#/soeg', 'Søg', 'search', true], ['#/mine-noter', 'Noter', 'bookmark', false], ['#/skema', 'Skema', 'calendar', false],
+      ['#/beskeder', 'Beskeder', 'chat', false], ['#/mere', 'Mere', 'grid', true]];
+  const sections = {
+    '#/boeger': ['#/boeger', '#/bog/', '#/rediger-', '#/udgiv', '#/aendringer', '#/importer'], '#/formler': ['#/formler'],
+    '#/lovaendringer': ['#/lovaendringer', '#/oplysninger', '#/kilder', '#/dokumentation'], '#/fag': ['#/fag', '#/opgave'],
+    '#/mere': ['#/mere', '#/admin', '#/skema', '#/karakterer', '#/notifikationer'],
+  };
   const isActive = (href) => current === href || (href !== '#/' && (sections[href] || [href]).some((p) => current.startsWith(p)));
   const badges = [];
-  const make = (cls, withIcon) => links.filter((l) => cls !== 'tab' || l[3]).map(([href, label, ic]) => {
-    const badge = href === '#/beskeder' ? h('span.badge', { hidden: !state.unread }, String(state.unread || '')) : null;
+  // Topmenuen viser de vigtigste punkter + "Mere"; bundmenuen på mobil de fem vigtigste
+  const topHidden = isTeacher() ? ['#/fag', '#/beskeder'] : ['#/beskeder', '#/skema'];
+  const make = (where) => links.filter((l) => (where === 'tab' ? l[3] : !topHidden.includes(l[0]))).map(([href, label, ic]) => {
+    const badge = href === '#/beskeder' || href === '#/lovaendringer' ? h('span.badge', { hidden: true, 'data-for': href }) : null;
     if (badge) badges.push(badge);
     return h('a', { href, class: isActive(href) ? 'active' : '', 'aria-current': isActive(href) ? 'page' : null },
-      withIcon ? icon(ic, cls === 'tab' ? 22 : 18) : null, h('span', label), badge);
+      icon(ic, where === 'tab' ? 22 : 17), h('span', label), badge);
   });
-  document.getElementById('topnav').replaceChildren(...make('top', true));
-  document.getElementById('tabbar').replaceChildren(...make('tab', true));
+  document.getElementById('topnav').replaceChildren(...make('top'));
+  document.getElementById('tabbar').replaceChildren(...make('tab'));
+  const bell = document.getElementById('bell');
+  bell.replaceChildren(icon('bell', 20), h('span.badge', { hidden: true, id: 'bellCount' }));
   refreshUnread(badges);
 }
 async function refreshUnread(badges) {
   try {
-    const { threads } = await api('GET', '/api/messages');
+    const [{ threads }, notes, legal] = await Promise.all([api('GET', '/api/messages'), api('GET', '/api/notifications'),
+      isTeacher() ? api('GET', '/api/teacher/overview').catch(() => null) : null]);
     state.unread = threads.reduce((n, t) => n + t.unread, 0);
-    badges.forEach((b) => { b.textContent = String(state.unread); b.hidden = !state.unread; });
+    const counts = { '#/beskeder': state.unread, '#/lovaendringer': legal ? legal.legal.length : 0 };
+    badges.forEach((b) => { const n = counts[b.dataset.for] || 0; b.textContent = String(n); b.hidden = !n; });
+    const bc = document.getElementById('bellCount');
+    if (bc) { bc.textContent = String(notes.unread); bc.hidden = !notes.unread; }
   } catch { /* ignore */ }
 }
 document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -178,6 +194,7 @@ function announcementList(items, showSubject) {
 }
 
 async function viewDashboard() {
+  if (isTeacher()) return viewTeacherDashboard();
   loading();
   const [d, { books }] = await Promise.all([api('GET', '/api/dashboard'), api('GET', '/api/books')]);
   const reading = books.filter((b) => b.chapterCount && b.readCount < b.chapterCount).slice(0, 3);
@@ -212,8 +229,13 @@ async function viewDashboard() {
         h('div.row', h('div', h('strong', g.assignmentTitle), h('div.small.muted', g.subjectName)), h('span.grade-big', g.grade)))))] : null);
   }
 
-  render(hello,
-    h('div.grid.two', h('div.stack', todayCard, left), h('div.stack', booksCard, h('div.card', h('h2', 'Seneste opslag'), announcementList(d.announcements, true)))),
+  const [{ notifications }, marks] = await Promise.all([api('GET', '/api/notifications'), api('GET', '/api/bookmarks')]);
+  const fresh = notifications.filter((n) => n.kind === 'udgave' && !n.read);
+  const newsCard = fresh.length ? h('div.card.news-card', fresh.slice(0, 3).map((n) => h('div.news-item', icon('rocket', 20), h('div', h('strong', n.text.split(' – ')[0]), h('div.small', n.text.split(' – ').slice(1).join(' – ') || n.text)), h('a.btn.small', { href: n.link }, 'Se ændringer')))) : null;
+  const marksCard = marks.bookmarks.length ? h('div.card', h('div.row', h('h2', 'Bogmærker'), h('a.small', { href: '#/mine-noter' }, 'Alle →')),
+    h('ul.list', marks.bookmarks.slice(0, 4).map((b) => h('li', h('a', { href: `#/bog/${b.bookId}/${b.chapterId}${b.anchor ? '?afsnit=' + b.anchor : ''}` }, icon('bookmark', 14), ' ', b.label), h('div.small.muted', b.bookTitle))))) : null;
+  render(hello, newsCard,
+    h('div.grid.two', h('div.stack', booksCard, todayCard, left), h('div.stack', marksCard, h('div.card', h('h2', 'Seneste opslag'), announcementList(d.announcements, true)))),
     h('div.section-title', h('h2', 'Mine fag')),
     h('div.grid.subjects', d.subjects.map(subjectCard)));
 }
@@ -543,7 +565,7 @@ async function router() {
   }
   if (hash === '#/login') { location.hash = '#/'; return; }
   updateChrome();
-  const parts = hash.slice(2).split('/').filter(Boolean);
+  const parts = hash.split('?')[0].slice(2).split('/').filter(Boolean);
   try {
     if (!parts.length) await viewDashboard();
     else if (parts[0] === 'fag' && parts[1]) await viewSubject(parts[1], parts[2]);
@@ -556,7 +578,24 @@ async function router() {
     else if (parts[0] === 'bog' && parts[1]) await viewBook(parts[1], parts[2]);
     else if (parts[0] === 'rediger-bog' && parts[1] && isTeacher()) await viewBookEditor(parts[1]);
     else if (parts[0] === 'rediger-kapitel' && parts[1] && isTeacher()) await viewChapterEditor(parts[1]);
-    else if (parts[0] === 'studio' && isTeacher()) await viewStudio();
+    else if (parts[0] === 'studio' && isTeacher()) await viewTeacherDashboard();
+    else if (parts[0] === 'udgiv' && parts[1] && isTeacher()) await viewPublish(parts[1]);
+    else if (parts[0] === 'aendringer' && parts[1]) await viewChanges(parts[1]);
+    else if (parts[0] === 'importer' && parts[1] && isTeacher()) await viewImport(parts[1]);
+    else if (parts[0] === 'formler' && parts[1] && isTeacher()) await viewFormulaEditor(parts[1]);
+    else if (parts[0] === 'formler' && isTeacher()) await viewFormulaLibrary();
+    else if (parts[0] === 'formelsamling') await viewFormulaCollection();
+    else if (parts[0] === 'lovaendringer' && parts[1] && isTeacher()) await viewLegalChange(parts[1]);
+    else if (parts[0] === 'lovaendringer' && isTeacher()) await viewLegal();
+    else if (parts[0] === 'dokumentation' && isTeacher()) await viewLegalLog();
+    else if (parts[0] === 'oplysninger' && isTeacher()) await viewFacts();
+    else if (parts[0] === 'kilder' && isTeacher()) await viewSources();
+    else if (parts[0] === 'assistent' && isTeacher()) await viewAssistant();
+    else if (parts[0] === 'admin' && isTeacher()) await viewAdmin(parts[1]);
+    else if (parts[0] === 'soeg') await viewSearch();
+    else if (parts[0] === 'mine-noter') await viewMyNotes();
+    else if (parts[0] === 'notifikationer') await viewNotifications();
+    else if (parts[0] === 'mere') viewMore();
     else render(h('div.card', h('h1', 'Siden findes ikke'), h('a', { href: '#/' }, 'Til forsiden')));
   } catch (e) {
     render(h('div.card', h('h2', 'Der opstod en fejl'), h('p.error', e.message), h('a', { href: '#/' }, 'Til forsiden')));
@@ -568,6 +607,7 @@ async function boot(target) {
   catch { state.user = null; }
   if (target && location.hash !== target) location.hash = target; else router();
 }
+document.getElementById('bell').addEventListener('click', () => { location.hash = '#/notifikationer'; });
 window.addEventListener('hashchange', router);
 boot();
 
