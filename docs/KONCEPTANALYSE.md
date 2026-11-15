@@ -1,4 +1,6 @@
-# Intelligent maritim undervisningsportal – konceptanalyse og udviklingsplan
+# Rohub – intelligent maritim undervisningsportal
+
+## Konceptanalyse og udviklingsplan
 
 **Marstal Navigationsskole · november 2026 · version 1**
 

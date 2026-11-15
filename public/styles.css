@@ -175,7 +175,7 @@ body { min-height: 100vh; }
 @media (prefers-reduced-motion: reduce) { #app { animation: none; } .subject-card, .book-cover { transition: none; } }
 .tabbar { display: none; }
 @media (max-width: 860px) {
-  .topnav, .user-name, .brand-text { display: none; }
+  .topnav, .user-name { display: none; }
   .topbar { justify-content: space-between; }
   .userbox { margin-left: auto; }
   body.signed-in .container { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
@@ -493,4 +493,5 @@ li.unread { font-weight: 600; }
 fieldset.check-grid { border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .3rem .8rem; padding: .6rem .8rem; }
 fieldset.check-grid legend { font-weight: 600; font-size: .88rem; padding: 0 .3rem; }
 @media (max-width: 1420px) { .user-name { display: none; } .topnav a { padding: .35rem .55rem; } }
-@media (max-width: 1180px) { .brand-text { display: none; } }
+
+.brand-text { font-size: 1.15rem; letter-spacing: .02em; }

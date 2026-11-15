@@ -1,4 +1,4 @@
-// Marstal Navigationsskole – elev- og lærerportal
+// Rohub – elev- og underviserportal (Marstal Navigationsskole)
 // Kører uden eksterne pakker:  node server.js   →  http://localhost:3000
 'use strict';
 
@@ -162,7 +162,7 @@ if (require.main === module) {
   loadDb(process.argv.includes('--reset'));
   if (process.argv.includes('--reset')) console.log('Databasen er nulstillet med demodata.');
   createServer().listen(PORT, HOST, () => {
-    console.log(`\n⚓ Marstal Navigationsskole – portal kører på http://localhost:${PORT}\n`);
+    console.log(`\n⚓ Rohub – portal kører på http://localhost:${PORT}\n`);
     console.log(`   AI: ${aiClient ? 'slået til (' + AI_MODEL + ')' : 'slået fra – sæt ANTHROPIC_API_KEY for at bruge AI-forslag'}`);
     console.log('   Administrator: admin (adgangskode admin123)');
     console.log('   Lærere: lars · mette · peter  (adgangskode laerer123)');

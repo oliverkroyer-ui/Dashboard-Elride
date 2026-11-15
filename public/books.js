@@ -595,7 +595,7 @@ async function exportPdf(bookId, opts = {}) {
     };
     // Forside
     doc.setFillColor(11, 46, 79); doc.rect(0, 0, W, 90, 'F');
-    doc.setTextColor(242, 193, 78); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfSafe('MARSTAL NAVIGATIONSSKOLE · ' + (d.subject || '').toUpperCase()), M, 30);
+    doc.setTextColor(242, 193, 78); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfSafe('ROHUB · MARSTAL NAVIGATIONSSKOLE · ' + (d.subject || '').toUpperCase()), M, 30);
     doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.text(doc.splitTextToSize(pdfSafe(d.title), CW), M, 50);
     doc.setTextColor(30, 40, 50); doc.setFont('helvetica', 'normal'); doc.setFontSize(12);
     y = 110; if (d.description) text(d.description, 12);
@@ -650,7 +650,7 @@ async function exportPdf(bookId, opts = {}) {
     const n = doc.getNumberOfPages();
     for (let i = 2; i <= n; i++) {
       doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110, 120, 130);
-      doc.text(pdfSafe(`${d.title} · ${d.label}`), M, 12); doc.text(`Side ${i} af ${n}`, W - M, 290, { align: 'right' }); doc.text('Marstal Navigationsskole', M, 290);
+      doc.text(pdfSafe(`${d.title} · ${d.label}`), M, 12); doc.text(`Side ${i} af ${n}`, W - M, 290, { align: 'right' }); doc.text('Rohub · Marstal Navigationsskole', M, 290);
       doc.setTextColor(30, 40, 50);
     }
     const filename = `${d.title.replace(/[^\wæøåÆØÅ -]+/g, '').trim() || 'bog'} ${opts.draft ? 'kladde' : d.label.split(' ·')[0]}.pdf`;

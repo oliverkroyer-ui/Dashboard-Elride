@@ -1,4 +1,6 @@
-# ⚓ Marstal Navigationsskole – intelligent undervisningsportal
+# ⚓ Rohub – intelligent undervisningsportal
+
+Udviklet til Marstal Navigationsskole.
 
 Et forfattersystem og en elevportal til maritim undervisning (søret, navigation, skibsteknik).
 Målet: **én ændring og én godkendelse** i stedet for timers rettelser i PDF-dokumenter.

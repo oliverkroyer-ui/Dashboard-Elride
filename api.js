@@ -1,4 +1,4 @@
-// Marstal Navigationsskole – portalens API-logik.
+// Rohub – portalens API-logik.
 // Miljøneutral: bruges af server.js (Node) og af browser-demoen (build-demo.js).
 (function (root) {
 'use strict';

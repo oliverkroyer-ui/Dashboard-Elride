@@ -84,7 +84,7 @@ const demoCss = `
 .demo-bar .btn { color: var(--navy); }
 `;
 
-const fragment = `<title>Marstal Navigationsskole Portal</title>
+const fragment = `<title>Rohub</title>
 <style>
 ${css}
 ${demoCss}

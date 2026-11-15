@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<title>Marstal Navigationsskole Portal</title>
+<title>Rohub</title>
 <style>
 :root {
   --navy: #0b2e4f;
@@ -184,7 +184,7 @@ body { min-height: 100vh; }
 @media (prefers-reduced-motion: reduce) { #app { animation: none; } .subject-card, .book-cover { transition: none; } }
 .tabbar { display: none; }
 @media (max-width: 860px) {
-  .topnav, .user-name, .brand-text { display: none; }
+  .topnav, .user-name { display: none; }
   .topbar { justify-content: space-between; }
   .userbox { margin-left: auto; }
   body.signed-in .container { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
@@ -502,7 +502,8 @@ li.unread { font-weight: 600; }
 fieldset.check-grid { border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .3rem .8rem; padding: .6rem .8rem; }
 fieldset.check-grid legend { font-weight: 600; font-size: .88rem; padding: 0 .3rem; }
 @media (max-width: 1420px) { .user-name { display: none; } .topnav a { padding: .35rem .55rem; } }
-@media (max-width: 1180px) { .brand-text { display: none; } }
+
+.brand-text { font-size: 1.15rem; letter-spacing: .02em; }
 
 
 .demo-bar { display: flex; gap: .75rem; align-items: center; justify-content: center; flex-wrap: wrap;
@@ -515,7 +516,7 @@ fieldset.check-grid legend { font-weight: 600; font-size: .88rem; padding: 0 .3r
   <header class="topbar" id="topbar" hidden>
     <a class="brand" href="#/">
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzAiIGZpbGw9IiMwYjJlNGYiLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNmMmMxNGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxjaXJjbGUgY3g9IjMyIiBjeT0iMTUiIHI9IjUiLz4KICAgIDxsaW5lIHgxPSIzMiIgeTE9IjIwIiB4Mj0iMzIiIHkyPSI1MiIvPgogICAgPGxpbmUgeDE9IjIyIiB5MT0iMjgiIHgyPSI0MiIgeTI9IjI4Ii8+CiAgICA8cGF0aCBkPSJNMTQgMzhjMiA5IDkgMTQgMTggMTRzMTYtNSAxOC0xNCIvPgogIDwvZz4KPC9zdmc+Cg==" alt="" width="30" height="30">
-      <span class="brand-text">Marstal Navigationsskole</span>
+      <span class="brand-text">Rohub</span>
     </a>
     <nav class="topnav" id="topnav" aria-label="Hovedmenu"></nav>
     <div class="userbox">
@@ -2736,7 +2737,7 @@ else (root.PortalModules = root.PortalModules || []).push(mod);
 })(this);
 
 ;
-// Marstal Navigationsskole – portalens API-logik.
+// Rohub – portalens API-logik.
 // Miljøneutral: bruges af server.js (Node) og af browser-demoen (build-demo.js).
 (function (root) {
 'use strict';
@@ -4249,7 +4250,7 @@ async function exportPdf(bookId, opts = {}) {
     };
     // Forside
     doc.setFillColor(11, 46, 79); doc.rect(0, 0, W, 90, 'F');
-    doc.setTextColor(242, 193, 78); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfSafe('MARSTAL NAVIGATIONSSKOLE · ' + (d.subject || '').toUpperCase()), M, 30);
+    doc.setTextColor(242, 193, 78); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfSafe('ROHUB · MARSTAL NAVIGATIONSSKOLE · ' + (d.subject || '').toUpperCase()), M, 30);
     doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.text(doc.splitTextToSize(pdfSafe(d.title), CW), M, 50);
     doc.setTextColor(30, 40, 50); doc.setFont('helvetica', 'normal'); doc.setFontSize(12);
     y = 110; if (d.description) text(d.description, 12);
@@ -4304,7 +4305,7 @@ async function exportPdf(bookId, opts = {}) {
     const n = doc.getNumberOfPages();
     for (let i = 2; i <= n; i++) {
       doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110, 120, 130);
-      doc.text(pdfSafe(`${d.title} · ${d.label}`), M, 12); doc.text(`Side ${i} af ${n}`, W - M, 290, { align: 'right' }); doc.text('Marstal Navigationsskole', M, 290);
+      doc.text(pdfSafe(`${d.title} · ${d.label}`), M, 12); doc.text(`Side ${i} af ${n}`, W - M, 290, { align: 'right' }); doc.text('Rohub · Marstal Navigationsskole', M, 290);
       doc.setTextColor(30, 40, 50);
     }
     const filename = `${d.title.replace(/[^\wæøåÆØÅ -]+/g, '').trim() || 'bog'} ${opts.draft ? 'kladde' : d.label.split(' ·')[0]}.pdf`;
@@ -4894,7 +4895,7 @@ function viewMore() {
 }
 
 ;
-// Marstal Navigationsskole – portal (klient)
+// Rohub – undervisningsportal (klient)
 'use strict';
 
 const state = { user: null, grades: [], unread: 0 };
@@ -5059,7 +5060,7 @@ function viewLogin() {
 
   render(h('div.login-wrap', h('div.card.login-card',
     h('div.logo', h('img', { src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzAiIGZpbGw9IiMwYjJlNGYiLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNmMmMxNGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxjaXJjbGUgY3g9IjMyIiBjeT0iMTUiIHI9IjUiLz4KICAgIDxsaW5lIHgxPSIzMiIgeTE9IjIwIiB4Mj0iMzIiIHkyPSI1MiIvPgogICAgPGxpbmUgeDE9IjIyIiB5MT0iMjgiIHgyPSI0MiIgeTI9IjI4Ii8+CiAgICA8cGF0aCBkPSJNMTQgMzhjMiA5IDkgMTQgMTggMTRzMTYtNSAxOC0xNCIvPgogIDwvZz4KPC9zdmc+Cg==', alt: '', width: 44, height: 44 }),
-      h('div', h('h1', 'Marstal Navigationsskole'), h('div.muted.small', 'Portal for elever og lærere'))),
+      h('div', h('h1', 'Rohub'), h('div.muted.small', 'Marstal Navigationsskole · portal for elever og undervisere'))),
     form,
     h('div.demo', h('strong', 'Demo-brugere'), h('br'),
       'Elever: anna, jonas, freja – adgangskode ', h('code', 'elev123'), h('br'),

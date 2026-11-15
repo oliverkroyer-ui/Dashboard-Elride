@@ -1,4 +1,4 @@
-// Marstal Navigationsskole – portal (klient)
+// Rohub – undervisningsportal (klient)
 'use strict';
 
 const state = { user: null, grades: [], unread: 0 };
@@ -163,7 +163,7 @@ function viewLogin() {
 
   render(h('div.login-wrap', h('div.card.login-card',
     h('div.logo', h('img', { src: '/favicon.svg', alt: '', width: 44, height: 44 }),
-      h('div', h('h1', 'Marstal Navigationsskole'), h('div.muted.small', 'Portal for elever og lærere'))),
+      h('div', h('h1', 'Rohub'), h('div.muted.small', 'Marstal Navigationsskole · portal for elever og undervisere'))),
     form,
     h('div.demo', h('strong', 'Demo-brugere'), h('br'),
       'Elever: anna, jonas, freja – adgangskode ', h('code', 'elev123'), h('br'),
